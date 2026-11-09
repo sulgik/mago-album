@@ -11,6 +11,7 @@
 | `index.html` | 사이트 전체 |
 | `config.js` | Supabase 주소·공개키. 비우면 예시 데이터로 도는 데모 모드 |
 | `supabase/schema.sql` | 표·접근 규칙·사진 버킷 생성 |
+| `supabase/password.sql` | 공유 비밀번호 잠금. 표 직접 읽기를 막고 `album_*` 함수로만 읽고 쓴다 |
 | `tools/roster_to_sql.py` | 명단 CSV → 넣기용 SQL |
 
 데이터 규칙:
@@ -22,7 +23,9 @@
 ## 1. Supabase 프로젝트 만들기 (운영진이 직접)
 
 1. https://supabase.com 가입 → New project (지역: Northeast Asia (Seoul))
-2. SQL Editor → `supabase/schema.sql` 내용 붙여 넣고 Run
+2. SQL Editor → `supabase/schema.sql` 내용 붙여 넣고 Run, 이어서 `supabase/password.sql` 도 Run
+   - 비밀번호 정하기: `password.sql` 안의 주석대로 `insert into album_settings ...` 를 실제 비밀번호로 바꿔 한 번 실행
+   - 비밀번호를 바꾸면 모든 동문이 다시 입력해야 한다
 3. Project Settings → API 에서 `Project URL` 과 `anon public` 키를 `config.js` 에 넣는다
    - `service_role` 키는 절대 넣지 않는다
 

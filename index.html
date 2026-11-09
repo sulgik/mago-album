@@ -89,7 +89,21 @@ h1{font-family:var(--display);font-size:30px;font-weight:700;margin:0;text-wrap:
 .lb{flex-direction:column;gap:10px}
 .lb img{max-height:80vh;border-radius:6px}
 .lb p{color:#eef1f8;margin:0;text-align:center}
-footer{margin-top:40px;color:var(--sub);font-size:12px}
+footer{margin-top:40px;color:var(--sub);font-size:12px;line-height:1.7}
+/* 비밀번호 화면 */
+.gate{position:fixed;inset:0;background:var(--paper);z-index:30;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:max(24px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px))}
+.gate .box{width:min(460px,100%);display:flex;flex-direction:column;gap:18px;margin-top:4vh}
+.gate .brand{display:flex;align-items:center;gap:14px;padding-bottom:16px;border-bottom:2px solid var(--navy)}
+.gate .brand img{width:64px;flex:none}
+.gate .brand h1{font-size:24px}
+.gate .warn{background:var(--gold-soft);border-left:4px solid var(--gold);border-radius:8px;padding:12px 14px;font-size:14px}
+.gate .warn h2{font-size:15px;margin:0 0 6px;color:var(--gold)}
+.gate .warn ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.gate form{display:flex;gap:8px}
+.gate input{flex:1;min-width:0;font:inherit;font-size:18px;padding:12px 14px;border:2px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+.gate input:focus{border-color:var(--navy);outline:none}
+.gate .msg{min-height:20px;font-size:13px;color:var(--warn)}
+.gate .fine{font-size:12px;color:var(--sub)}
 @media (max-width:520px){h1{font-size:25px}.faces{grid-template-columns:repeat(3,1fr);gap:12px 8px}.face .nm{font-size:14px}}
 </style>
 </head>
@@ -128,7 +142,34 @@ footer{margin-top:40px;color:var(--sub);font-size:12px}
     <div class="photos" id="photos"></div>
   </section>
 
-  <footer>사진이 잘못 들어갔거나 지워야 할 사진이 있으면 동문회 운영진에게 알려 주세요.</footer>
+  <footer>
+    이 앨범은 마산고 55기 동문만 보는 곳이에요. 링크와 비밀번호를 동문 밖으로 전하지 말아 주세요.<br>
+    내 사진이나 이름을 내리고 싶거나, 잘못 들어간 사진이 있으면 동문회 운영진에게 알려 주세요. 바로 처리해요.
+    · <button class="btn" id="lock" style="padding:2px 8px;font-size:12px">잠그기</button>
+  </footer>
+</div>
+
+<div class="gate" id="gate" hidden>
+  <div class="box">
+    <div class="brand">
+      <img src="logo-brown.svg" alt="마산고등학교 교표">
+      <div><div class="eyebrow">마산고등학교 · 1993–1995</div><h1>55기 졸업앨범</h1></div>
+    </div>
+    <div class="warn">
+      <h2>들어가기 전에</h2>
+      <ul>
+        <li>여기에는 동문들의 <b>이름과 얼굴 사진</b>이 있어요. 55기 동문만 보는 곳이에요.</li>
+        <li>비밀번호와 링크를 <b>동문 밖으로 전하지 말아 주세요.</b> 화면을 캡처해 다른 곳에 올리는 것도 삼가 주세요.</li>
+        <li>내 사진이나 이름을 내리고 싶으면 운영진에게 말씀해 주세요. 바로 내려요.</li>
+      </ul>
+    </div>
+    <form id="gateForm">
+      <input type="password" id="gatePw" placeholder="동문회 비밀번호" autocomplete="current-password" aria-label="동문회 비밀번호">
+      <button class="btn pri" type="submit">들어가기</button>
+    </form>
+    <div class="msg" id="gateMsg"></div>
+    <p class="fine">비밀번호는 55기 단톡방에서 확인하세요. 들어가면 위 내용에 동의한 것으로 봐요. 이 기기에서는 다음부터 비밀번호를 묻지 않아요.</p>
+  </div>
 </div>
 
 <div class="overlay" id="pv" hidden>
@@ -153,27 +194,28 @@ const gName = g => YEARS[g] ? `${YEARS[g]} · ${g}학년` : `${g}학년`;
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+// ---------- 비밀번호 ----------
+const PW_KEY = 'mago-album-pw';
+let PW = '';
+try{ PW = localStorage.getItem(PW_KEY) || '' }catch(e){}
+function savePw(v){ PW = v; try{ v ? localStorage.setItem(PW_KEY, v) : localStorage.removeItem(PW_KEY) }catch(e){} }
+function showGate(msg){ $('gate').hidden = false; $('gateMsg').textContent = msg || ''; $('gatePw').value = ''; setTimeout(() => $('gatePw').focus(), 50) }
+const isWrongPw = e => e && (e.code === '28000' || /wrong password/i.test(e.message || ''));
+
 // ---------- 저장소: Supabase 또는 데모 ----------
 const DEMO = !(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY && window.supabase);
 const api = DEMO ? demoApi() : supabaseApi(window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY));
 
+// 모든 읽기·쓰기는 비밀번호를 받는 서버 함수(album_*)로만 한다. 표를 직접 읽는 길은 서버에서 막혀 있다.
 function supabaseApi(sb){
   const must = r => { if(r.error) throw r.error; return r.data };
   return {
-    async load(){
-      const [r, a, p, t] = await Promise.all([
-        sb.from('roster').select('id,name,c3,portrait').order('id').range(0, 4999),
-        sb.from('answers').select('person_id,c1,c2').range(0, 4999),
-        sb.from('photos').select('id,path,event,caption,created_at').order('created_at', {ascending:false}).range(0, 1999),
-        sb.from('teachers').select('id,name,role,subject,grade,class,portrait').order('id'),
-      ]);
-      return { roster: must(r), answers: must(a), photos: must(p), teachers: must(t) };
-    },
-    async setAnswer(id, row){ must(await sb.from('answers').upsert({ person_id:id, c1:row.c1 ?? null, c2:row.c2 ?? null })) },
+    async load(){ return must(await sb.rpc('album_load', { pw: PW })) },
+    async setAnswer(id, row){ must(await sb.rpc('album_set_answer', { pw: PW, p_person:id, p_c1: row.c1 ?? null, p_c2: row.c2 ?? null })) },
     async addPhoto(blob, event, caption){
       const path = `${new Date().toISOString().slice(0,10)}/${crypto.randomUUID()}.jpg`;
       must(await sb.storage.from('photos').upload(path, blob, { contentType:'image/jpeg' }));
-      must(await sb.from('photos').insert({ path, event, caption: caption || null }));
+      must(await sb.rpc('album_add_photo', { pw: PW, p_path: path, p_event: event, p_caption: caption || '' }));
     },
     url: path => sb.storage.from('photos').getPublicUrl(path).data.publicUrl,
     portrait: path => path ? sb.storage.from('portraits').getPublicUrl(path).data.publicUrl : null,
@@ -181,12 +223,13 @@ function supabaseApi(sb){
 }
 
 function demoApi(){
+  // 데모용 가짜 이름. 실제 명단은 서버에만 둔다.
   const roster = [
-    {id:'3-02-01', name:'김설기', c3:2}, {id:'3-02-02', name:'이진권', c3:2},
-    {id:'3-01-01', name:'예시 박민수', c3:1}, {id:'3-05-01', name:'예시 최영호', c3:5}, {id:'3-05-02', name:'예시 정우성', c3:5},
+    {id:'3-02-01', name:'예시 가', c3:2}, {id:'3-02-02', name:'예시 나', c3:2},
+    {id:'3-01-01', name:'예시 다', c3:1}, {id:'3-05-01', name:'예시 라', c3:5}, {id:'3-05-02', name:'예시 마', c3:5},
   ];
   const answers = [{person_id:'3-02-01', c2:3}, {person_id:'3-02-02', c2:3}];
-  const teachers = [{id:'t-01', name:'정희상', role:'담임', grade:3, class:2}, {id:'t-02', name:'예시 교과', role:'교과', subject:'수학', grade:3}];
+  const teachers = [{id:'t-01', name:'예시 담임', role:'담임', grade:3, class:2}, {id:'t-02', name:'예시 교과', role:'교과', subject:'수학', grade:3}];
   const photos = [], blobs = {};
   return {
     async load(){ return { roster, answers:[...answers], photos:[...photos], teachers } },
@@ -206,12 +249,18 @@ const ini = name => esc(String(name).replace(/^예시\s*/, '').slice(0, 1));
 const pic = p => { const u = api.portrait(p.portrait); return u ? `<img src="${esc(u)}" alt="${esc(p.name)}" loading="lazy">` : `<span class="ini" aria-hidden="true">${ini(p.name)}</span>` };
 
 async function refresh(){
+  if(!DEMO && !PW){ showGate(); return }
   try{
     const d = await api.load();
-    roster = d.roster; photos = d.photos; teachers = d.teachers || [];
-    answers = {}; d.answers.forEach(a => answers[a.person_id] = a);
+    roster = d.roster || []; photos = d.photos || []; teachers = d.teachers || [];
+    answers = {}; (d.answers || []).forEach(a => answers[a.person_id] = a);
     loaded = true; loadErr = false;
-  }catch(e){ console.error(e); loadErr = true; loaded = true }
+    $('gate').hidden = true;
+  }catch(e){
+    console.error(e);
+    if(isWrongPw(e)){ savePw(''); roster = []; photos = []; teachers = []; showGate(PW === '' ? '비밀번호가 맞지 않아요. 단톡방에서 다시 확인해 주세요.' : ''); return }
+    loadErr = true; loaded = true;
+  }
   renderStats(); renderPhotos();
   if(!openId) renderAlbum();   // 개인 카드를 보는 중이면 뒤 화면은 그대로 둔다
 }
@@ -320,8 +369,18 @@ $('pvRows').addEventListener('change', async e => {
   ok.className = 'saved'; ok.textContent = '저장 중…';
   saving = saving.catch(() => {}).then(() => api.setAnswer(id, answers[id]));
   try{ await saving; ok.textContent = '저장됨'; renderStats() }
-  catch(err){ console.error(err); ok.className = 'saved err'; ok.textContent = '저장 안 됨' }
+  catch(err){ console.error(err); ok.className = 'saved err'; ok.textContent = '저장 안 됨'; if(isWrongPw(err)){ closePerson(); savePw(''); showGate('비밀번호가 바뀌었어요. 다시 입력해 주세요.') } }
 });
+
+$('gateForm').onsubmit = async e => {
+  e.preventDefault();
+  const v = $('gatePw').value.trim();
+  if(!v){ $('gateMsg').textContent = '비밀번호를 입력해 주세요.'; return }
+  $('gateMsg').textContent = '확인 중…';
+  savePw(v);
+  await refresh();
+};
+$('lock').onclick = () => { savePw(''); roster = []; photos = []; teachers = []; answers = {}; loaded = false; renderAlbum(); showGate() };
 
 $('photos').onclick = e => {
   const b = e.target.closest('button[data-id]'); if(!b) return;
