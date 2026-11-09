@@ -49,8 +49,10 @@ h1{font-family:var(--display);font-size:30px;font-weight:700;margin:0;text-wrap:
 .face .pic{width:100%;aspect-ratio:3/4;border-radius:6px;overflow:hidden;background:var(--navy-soft);display:flex;align-items:center;justify-content:center;border:1px solid var(--line)}
 .face .pic img{width:100%;height:100%;object-fit:cover;display:block}
 .face .pic .ini{font-family:var(--display);font-size:30px;color:var(--navy);opacity:.55}
-.face .nm{font-family:var(--display);font-size:16px;font-weight:700;text-align:center;overflow-wrap:anywhere}
+.face .nm{font-family:var(--display);font-size:16px;font-weight:700;text-align:center;overflow-wrap:anywhere;color:var(--navy);text-decoration:underline dotted;text-underline-offset:3px;text-decoration-thickness:1px}
+.face .todo{font-size:11px;color:var(--gold);margin-top:-4px;text-align:center}
 .face:hover .pic{border-color:var(--navy)}
+.face:hover .nm{text-decoration-style:solid}
 .faces.homeroom{padding-bottom:16px;margin-bottom:16px;border-bottom:1px dashed var(--line)}
 .face.teacher{cursor:default}
 .face.teacher .pic{border:2px solid var(--gold);background:var(--gold-soft)}
@@ -177,7 +179,7 @@ footer{margin-top:40px;color:var(--sub);font-size:12px;line-height:1.7}
     <div class="big" id="pvPic"></div>
     <h3 id="pvName"></h3>
     <div class="rows" id="pvRows"></div>
-    <p class="note">1·2학년 반은 기억나는 대로 골라 주세요. 고르면 바로 저장되고 모두에게 보여요.</p>
+    <p class="note" id="pvNote">1·2학년 반은 기억나는 대로 골라 주세요. 고르면 바로 저장되고 모두에게 보여요.</p>
     <button class="btn" id="pvClose">닫기</button>
   </div>
 </div>
@@ -191,6 +193,8 @@ const EVENTS = ['수학여행','졸업식','수련회','체육대회','교실','
 const GRADES = [3, 2, 1];   // 3학년부터 거꾸로
 const YEARS = CFG.YEARS || {};
 const gName = g => YEARS[g] ? `${YEARS[g]} · ${g}학년` : `${g}학년`;
+const gShort = g => YEARS[g] ? `${YEARS[g]}` : `${g}학년`;   // 좁은 자리용: 연도만
+const y12 = () => (YEARS[1] && YEARS[2]) ? `${YEARS[1]}·${YEARS[2]}` : '1·2학년';
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -273,7 +277,7 @@ function renderStats(){
   if(!n){ $('stats').innerHTML = '졸업앨범을 준비하고 있어요.' + tag; return }
   const withPic = roster.filter(p => p.portrait).length;
   const f1 = roster.filter(p => cls(p,1)).length, f2 = roster.filter(p => cls(p,2)).length;
-  $('stats').innerHTML = `<span>졸업생 <b>${n}</b>명</span><span>개인 사진 <b>${withPic}</b>/${n}</span><span>1학년 반 <b>${f1}</b>/${n}</span><span>2학년 반 <b>${f2}</b>/${n}</span><span>사진첩 <b>${photos.length}</b>장</span>${tag}`;
+  $('stats').innerHTML = `<span>졸업생 <b>${n}</b>명</span><span>개인 사진 <b>${withPic}</b>/${n}</span><span>${gShort(1)} 반 <b>${f1}</b>/${n}</span><span>${gShort(2)} 반 <b>${f2}</b>/${n}</span><span>사진첩 <b>${photos.length}</b>장</span>${tag}`;
 }
 
 function groups(){
@@ -294,8 +298,8 @@ function renderAlbum(){
   if(!all.map(String).includes(String(klass))) klass = all[0] ?? null;
   $('classPick').innerHTML = all.map(k => `<button class="chip" data-c="${k}" aria-selected="${String(k)===String(klass)}">${k === '?' ? '모름' : k === 'T' ? '선생님' : k + '반'}</button>`).join('');
   $('albumHint').textContent = grade === 3
-    ? '사진을 누르면 1·2학년 때 반을 입력할 수 있어요.'
-    : `${gName(grade)} 반은 동문들이 입력한 대로 모여요. 반이 비어 있으면 "모름"에서 친구를 찾아 입력해 주세요.`;
+    ? `이름이나 사진을 누르면 그 친구의 ${gShort(1)}년(1학년)·${gShort(2)}년(2학년) 반을 입력할 수 있어요. 내 것도, 기억나는 친구 것도 괜찮아요.`
+    : `${gName(grade)} 반은 동문들이 입력한 대로 모여요. 반이 비어 있으면 "모름"에서 친구 이름을 눌러 입력해 주세요.`;
   if(klass === null){ $('page').innerHTML = '<div class="empty"><strong>아직 입력된 반이 없어요</strong>3학년 앨범에서 사진을 눌러 입력해 주세요.</div>'; return }
   if(klass === 'T'){
     const sorted = tAll.slice().sort((a,b) => (a.role === '담임' ? 0 : 1) - (b.role === '담임' ? 0 : 1) || (a.class||99) - (b.class||99) || a.name.localeCompare(b.name,'ko'));
@@ -307,13 +311,13 @@ function renderAlbum(){
   const title = klass === '?' ? `${gName(grade)} · 반 모름` : `${gName(grade)} ${klass}반`;
   $('page').innerHTML = `<h2>${esc(title)} <span>${list.length}명</span></h2>
     ${homeroom.length ? `<div class="faces homeroom">${homeroom.map(teacherCard).join('')}</div>` : ''}
-    <div class="faces">${list.map(p => `<button class="face" data-id="${esc(p.id)}"><span class="pic">${pic(p)}</span><span class="nm">${esc(p.name)}</span></button>`).join('')}</div>`;
+    <div class="faces">${list.map(p => `<button class="face" data-id="${esc(p.id)}" title="누르면 ${y12()} 반을 입력할 수 있어요"><span class="pic">${pic(p)}</span><span class="nm">${esc(p.name)}</span>${(cls(p,1) && cls(p,2)) ? '' : `<span class="todo">${y12()} 반 입력</span>`}</button>`).join('')}</div>`;
 }
 
 // 그 학년의 선생님: 학년이 정해진 분 + 학년 미정(전 학년) 교과 선생님
 function teachersOf(g){ return teachers.filter(t => t.grade === g || (!t.grade && t.role === '교과')) }
 function teacherCard(t){
-  const role = t.role === '담임' ? `담임${t.class ? ' · ' + t.grade + '-' + t.class : ''}` : (t.subject || '교과');
+  const role = t.role === '담임' ? `${t.class ? gShort(t.grade) + ' ' + t.grade + '학년 ' + t.class + '반 ' : ''}담임` : `${t.grade ? gShort(t.grade) + ' ' : ''}${t.subject || '교과'}`;
   return `<div class="face teacher"><span class="pic">${pic(t)}</span><span class="nm">${esc(t.name)} 선생님</span><span class="role">${esc(role)}</span></div>`;
 }
 
@@ -329,6 +333,7 @@ function openPerson(id){
     for(let i = 1; i <= maxClass(); i++) opts += `<option value="${i}"${v === i ? ' selected' : ''}>${i}반</option>`;
     return `<div class="row"><label for="pv-${g}">${gName(g)}</label><span style="display:flex;gap:8px;align-items:center"><span class="saved" id="ok-${g}"></span><select id="pv-${g}" data-g="${g}">${opts}</select></span></div>`;
   }).join('');
+  $('pvNote').textContent = `${gShort(1)}년(1학년)과 ${gShort(2)}년(2학년) 때 반을 기억나는 대로 골라 주세요. 고르면 바로 저장되고 모두에게 보여요.`;
   $('pv').hidden = false;
   $('pvClose').focus();
 }
