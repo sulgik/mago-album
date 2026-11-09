@@ -104,6 +104,6 @@ alter table teachers enable row level security;
 drop policy if exists "teachers read" on teachers;
 create policy "teachers read" on teachers for select using (true);
 
-insert into teachers (id, name, role, grade, class)
-values ('t-01', '정희상', '담임', 3, 2)
-on conflict (id) do nothing;
+-- 선생님 넣기 (SQL Editor 에서만; 실명은 저장소에 두지 않는다)
+--   insert into teachers (id, name, role, grade, class) values ('t-01', '이름', '담임', 3, 2)
+--   on conflict (id) do update set name = excluded.name, role = excluded.role, grade = excluded.grade, class = excluded.class;
