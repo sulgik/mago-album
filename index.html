@@ -193,7 +193,8 @@ const EVENTS = ['수학여행','졸업식','수련회','체육대회','교실','
 const GRADES = [3, 2, 1];   // 3학년부터 거꾸로
 const YEARS = CFG.YEARS || {};
 const gName = g => YEARS[g] ? `${YEARS[g]} · ${g}학년` : `${g}학년`;
-const gShort = g => YEARS[g] ? `${YEARS[g]}` : `${g}학년`;   // 좁은 자리용: 연도만const $ = id => document.getElementById(id);
+const gShort = g => YEARS[g] ? `${YEARS[g]}` : `${g}학년`;   // 좁은 자리용: 연도만
+const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 // ---------- 비밀번호 ----------
