@@ -32,6 +32,11 @@ h1{font-family:var(--display);font-size:30px;font-weight:700;margin:0;text-wrap:
 .stats{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--sub);font-size:13px;font-variant-numeric:tabular-nums}
 .stats b{color:var(--ink);font-weight:600}
 .demo{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--gold-soft);color:var(--gold);font-weight:700}
+.search{position:relative;margin-bottom:14px}
+.search input{width:100%;box-sizing:border-box;padding:10px 40px 10px 14px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:16px;color:var(--ink);background:var(--card)}
+.search input:focus{outline:2px solid var(--gold);outline-offset:1px}
+.search button{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:none;font-size:22px;line-height:1;color:var(--sub);cursor:pointer;padding:4px 8px}
+.face .sub{font-size:12px;color:var(--sub);margin-top:-4px;text-align:center;line-height:1.35}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .tab{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 16px;border-radius:999px;font:inherit;cursor:pointer}
 .tab small{color:inherit;opacity:.7;margin-left:2px}
@@ -126,6 +131,10 @@ footer{margin-top:40px;color:var(--sub);font-size:12px;line-height:1.7}
   </div>
 
   <section id="v-album">
+    <form class="search" id="searchForm" role="search" onsubmit="return false">
+      <input id="q" type="search" placeholder="이름으로 찾기 (예: 김설기, 이진)" autocomplete="off" enterkeyhint="search" aria-label="이름 검색">
+      <button type="button" id="qClear" hidden aria-label="지우기">×</button>
+    </form>
     <div class="tabs" id="gradePick"></div>
     <div class="chips" id="classPick"></div>
     <p class="hint" id="albumHint"></p>
@@ -287,8 +296,25 @@ function groups(){
 
 // 아직 안 채운 학년만 표시: 둘 다 있으면 아무것도 안 띄운다
 const todo = p => { const m = [1, 2].filter(g => !cls(p, g)); return m.length ? `<span class="todo">${m.length === 2 ? '1·2학년' : m[0] + '학년'} 반 입력</span>` : '' };
+// 이름 검색: 공백 무시, 부분 일치. 학생은 3학년 반과 입력된 1·2학년 반을 함께 보여 준다
+let q = '';
+const norm = s => String(s ?? '').replace(/\s+/g, '').toLowerCase();
+function renderSearch(){
+  const n = norm(q);
+  $('classPick').innerHTML = ''; $('albumHint').textContent = '';
+  if(!loaded){ $('page').innerHTML = '<div class="empty">앨범을 불러오는 중이에요…</div>'; return }
+  const people = roster.filter(p => norm(p.name).includes(n)).sort((a,b) => a.name.localeCompare(b.name,'ko') || a.id.localeCompare(b.id));
+  const ts = teachers.filter(t => norm(t.name).includes(n));
+  if(!people.length && !ts.length){ $('page').innerHTML = `<div class="empty"><strong>“${esc(q)}” 을(를) 못 찾았어요</strong>졸업앨범의 이름과 다르게 읽혔을 수 있어요. 성만 넣어 보세요.</div>`; return }
+  const sub = p => [3, 2, 1].map(g => { const c = cls(p, g); return c ? `${g}학년 ${c}반` : null }).filter(Boolean).join(' · ');
+  $('page').innerHTML = `<h2>“${esc(q)}” 검색 <span>${people.length + ts.length}명</span></h2>
+    ${ts.length ? `<div class="faces homeroom">${ts.map(teacherCard).join('')}</div>` : ''}
+    <div class="faces">${people.map(p => `<button class="face" data-id="${esc(p.id)}" title="누르면 1·2학년 반을 입력할 수 있어요"><span class="pic">${pic(p)}</span><span class="nm">${esc(p.name)}</span><span class="sub">${esc(sub(p))}</span>${todo(p)}</button>`).join('')}</div>`;
+}
 function renderAlbum(){
-  $('gradePick').innerHTML = GRADES.map(g => `<button class="tab" data-g="${g}" aria-selected="${g===grade}">${gName(g)}</button>`).join('');
+  $('gradePick').innerHTML = GRADES.map(g => `<button class="tab" data-g="${g}" aria-selected="${!q && g===grade}">${gName(g)}</button>`).join('');
+  $('qClear').hidden = !q;
+  if(q.trim()){ renderSearch(); return }
   if(!loaded){ $('page').innerHTML = '<div class="empty">앨범을 불러오는 중이에요…</div>'; $('classPick').innerHTML = ''; return }
   if(!roster.length){ $('classPick').innerHTML = ''; $('page').innerHTML = '<div class="empty"><strong>아직 앨범이 비어 있어요</strong>졸업앨범 사진을 옮기는 중이에요.</div>'; return }
   const { by, none, keys } = groups();
@@ -359,7 +385,11 @@ function show(view){
 
 // ---------- 동작 ----------
 ['album','photo'].forEach(v => $('t-' + v).onclick = () => show(v));
-$('gradePick').onclick = e => { const b = e.target.closest('[data-g]'); if(b){ grade = +b.dataset.g; klass = null; renderAlbum() } };
+$('gradePick').onclick = e => { const b = e.target.closest('[data-g]'); if(b){ grade = +b.dataset.g; klass = null; clearSearch(false); renderAlbum() } };
+function clearSearch(render = true){ q = ''; $('q').value = ''; if(render) renderAlbum() }
+$('q').addEventListener('input', () => { q = $('q').value; renderAlbum() });
+$('q').addEventListener('keydown', e => { if(e.key === 'Escape') clearSearch() });
+$('qClear').onclick = () => { clearSearch(); $('q').focus() };
 $('classPick').onclick = e => { const b = e.target.closest('[data-c]'); if(b){ const c = b.dataset.c; klass = (c === '?' || c === 'T') ? c : +c; renderAlbum() } };
 $('page').onclick = e => { const b = e.target.closest('.face[data-id]'); if(b) openPerson(b.dataset.id) };
 $('pvClose').onclick = closePerson;
