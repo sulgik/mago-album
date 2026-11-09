@@ -285,6 +285,8 @@ function groups(){
   return { by, none, keys: Object.keys(by).map(Number).sort((a,b) => a-b) };
 }
 
+// 아직 안 채운 학년만 표시: 둘 다 있으면 아무것도 안 띄운다
+const todo = p => { const m = [1, 2].filter(g => !cls(p, g)); return m.length ? `<span class="todo">${m.map(g => g + '학년').join('·')} 반 입력</span>` : '' };
 function renderAlbum(){
   $('gradePick').innerHTML = GRADES.map(g => `<button class="tab" data-g="${g}" aria-selected="${g===grade}">${gName(g)}</button>`).join('');
   if(!loaded){ $('page').innerHTML = '<div class="empty">앨범을 불러오는 중이에요…</div>'; $('classPick').innerHTML = ''; return }
@@ -310,7 +312,7 @@ function renderAlbum(){
   const title = klass === '?' ? `${gName(grade)} · 반 모름` : `${gName(grade)} ${klass}반`;
   $('page').innerHTML = `<h2>${esc(title)} <span>${list.length}명</span></h2>
     ${homeroom.length ? `<div class="faces homeroom">${homeroom.map(teacherCard).join('')}</div>` : ''}
-    <div class="faces">${list.map(p => `<button class="face" data-id="${esc(p.id)}" title="누르면 1·2학년 반을 입력할 수 있어요"><span class="pic">${pic(p)}</span><span class="nm">${esc(p.name)}</span>${(cls(p,1) && cls(p,2)) ? '' : '<span class="todo">1·2학년 반 입력</span>'}</button>`).join('')}</div>`;
+    <div class="faces">${list.map(p => `<button class="face" data-id="${esc(p.id)}" title="누르면 1·2학년 반을 입력할 수 있어요"><span class="pic">${pic(p)}</span><span class="nm">${esc(p.name)}</span>${todo(p)}</button>`).join('')}</div>`;
 }
 
 // 그 학년의 선생님: 학년이 정해진 분 + 학년 미정(전 학년) 교과 선생님
