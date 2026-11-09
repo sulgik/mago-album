@@ -286,7 +286,7 @@ function groups(){
 }
 
 // 아직 안 채운 학년만 표시: 둘 다 있으면 아무것도 안 띄운다
-const todo = p => { const m = [1, 2].filter(g => !cls(p, g)); return m.length ? `<span class="todo">${m.map(g => g + '학년').join('·')} 반 입력</span>` : '' };
+const todo = p => { const m = [1, 2].filter(g => !cls(p, g)); return m.length ? `<span class="todo">${m.length === 2 ? '1·2학년' : m[0] + '학년'} 반 입력</span>` : '' };
 function renderAlbum(){
   $('gradePick').innerHTML = GRADES.map(g => `<button class="tab" data-g="${g}" aria-selected="${g===grade}">${gName(g)}</button>`).join('');
   if(!loaded){ $('page').innerHTML = '<div class="empty">앨범을 불러오는 중이에요…</div>'; $('classPick').innerHTML = ''; return }
