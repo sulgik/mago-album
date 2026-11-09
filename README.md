@@ -1,0 +1,52 @@
+# 마산고 온라인 앨범 — 설치 안내
+
+이름 검색(1·2·3학년 반), 반별 명단, 사진첩(수학여행·졸업식 등).
+화면은 GitHub Pages(무료), 데이터와 사진은 Supabase(무료 등급)에 둔다.
+링크만 있으면 누구나 보고 입력할 수 있다(로그인 없음). 검색엔진 노출은 막아 두었다.
+
+## 구조
+
+| 파일 | 역할 |
+|---|---|
+| `index.html` | 사이트 전체 |
+| `config.js` | Supabase 주소·공개키. 비우면 예시 데이터로 도는 데모 모드 |
+| `supabase/schema.sql` | 표·접근 규칙·사진 버킷 생성 |
+| `tools/roster_to_sql.py` | 명단 CSV → 넣기용 SQL |
+
+데이터 규칙:
+- `roster` (이름, 3학년 반): 사이트에서는 못 바꾼다. 운영진이 SQL 로만 넣는다.
+- `answers` (1·2학년 반): 누구나 입력·수정. 모든 변경이 `answers_log` 에 남아 되돌릴 수 있다.
+- `photos`: 누구나 올린다. 사진은 긴 변 2000px JPEG 로 줄여 올라간다(장당 약 0.3~1MB, 5MB 상한).
+  지우거나 숨기려면 대시보드에서 해당 행의 `hidden` 을 true 로.
+
+## 1. Supabase 프로젝트 만들기 (운영진이 직접)
+
+1. https://supabase.com 가입 → New project (지역: Northeast Asia (Seoul))
+2. SQL Editor → `supabase/schema.sql` 내용 붙여 넣고 Run
+3. Project Settings → API 에서 `Project URL` 과 `anon public` 키를 `config.js` 에 넣는다
+   - `service_role` 키는 절대 넣지 않는다
+
+무료 등급: DB 500MB, 사진 저장 1GB(줄인 사진 기준 약 1,500~3,000장).
+1주일간 접속이 없으면 프로젝트가 일시정지되니, 행사 전후로 한 번씩 열어 본다.
+
+## 2. 명단 넣기
+
+졸업앨범에서 옮긴 CSV (`이름,3학년반,번호`):
+
+```bash
+python3 tools/roster_to_sql.py roster.csv > roster.sql
+```
+
+`roster.sql` 내용을 SQL Editor 에 붙여 넣고 Run. 다시 넣으면 덮어쓴다.
+
+## 3. GitHub Pages 게시
+
+이 `site/` 폴더 내용을 공개 저장소에 올리고 Settings → Pages → `main` / root.
+주소 예: `https://<계정>.github.io/masanhs-album/`
+
+## 장난 입력 되돌리기
+
+```sql
+-- 특정 사람의 변경 이력
+select * from answers_log where person_id = '3-02-01' order by at desc;
+```

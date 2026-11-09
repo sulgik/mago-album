@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="logo-brown.svg" type="image/svg+xml">
+<title>마산고 55기 졸업앨범</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* 졸업앨범 톤: 흰 바탕 + 가죽 표지 같은 브라운, 반 페이지는 증명사진 격자. 항상 밝은 화면. */
+:root{
+  --paper:#ffffff; --card:#ffffff; --ink:#2b2119; --sub:#7a6a5c; --line:#e9e0d6;
+  --navy:#6b4226; --navy-soft:#f6efe8; --gold:#a5692c; --gold-soft:#fbf3e8; --ok:#4f7a3a; --warn:#a4452c;
+  --display:"Gowun Batang",ui-serif,"AppleMyungjo",serif;
+  --body:"IBM Plex Sans KR",-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55}
+img{max-width:100%}
+[hidden]{display:none!important}
+.wrap{max-width:960px;margin:0 auto;padding-block:28px 72px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{display:flex;align-items:center;gap:16px;margin-bottom:22px;padding-bottom:18px;border-bottom:2px solid var(--navy)}
+header .logo{width:84px;height:auto;flex:none}
+header .ht{display:flex;flex-direction:column;gap:4px;min-width:0}
+@media (max-width:520px){header .logo{width:60px}}
+.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--gold);font-weight:700}
+h1{font-family:var(--display);font-size:30px;font-weight:700;margin:0;text-wrap:balance}
+.stats{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--sub);font-size:13px;font-variant-numeric:tabular-nums}
+.stats b{color:var(--ink);font-weight:600}
+.demo{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--gold-soft);color:var(--gold);font-weight:700}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tab{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 16px;border-radius:999px;font:inherit;cursor:pointer}
+.tab small{color:inherit;opacity:.7;margin-left:2px}
+.tab[aria-selected="true"]{background:var(--navy);border-color:var(--navy);color:var(--card)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.chip{border:1px solid var(--line);background:transparent;color:var(--ink);min-width:44px;padding:6px 10px;border-radius:8px;font:inherit;font-variant-numeric:tabular-nums;cursor:pointer}
+.chip[aria-selected="true"]{background:var(--gold-soft);border-color:var(--gold);color:var(--gold);font-weight:700}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.hint{color:var(--sub);font-size:13px;margin:0 2px 12px}
+.page{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 16px 22px}
+.page h2{font-family:var(--display);font-size:24px;margin:0 0 14px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.page h2 span{font-family:var(--body);font-size:13px;color:var(--sub);font-weight:400}
+.faces{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:16px 12px}
+.face{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.face .pic{width:100%;aspect-ratio:3/4;border-radius:6px;overflow:hidden;background:var(--navy-soft);display:flex;align-items:center;justify-content:center;border:1px solid var(--line)}
+.face .pic img{width:100%;height:100%;object-fit:cover;display:block}
+.face .pic .ini{font-family:var(--display);font-size:30px;color:var(--navy);opacity:.55}
+.face .nm{font-family:var(--display);font-size:16px;font-weight:700;text-align:center;overflow-wrap:anywhere}
+.face:hover .pic{border-color:var(--navy)}
+.faces.homeroom{padding-bottom:16px;margin-bottom:16px;border-bottom:1px dashed var(--line)}
+.face.teacher{cursor:default}
+.face.teacher .pic{border:2px solid var(--gold);background:var(--gold-soft)}
+.face.teacher .pic .ini{color:var(--gold)}
+.face.teacher:hover .pic{border-color:var(--gold)}
+.face .role{font-size:12px;color:var(--gold);margin-top:-4px;text-align:center}
+.empty{padding:18px 4px;color:var(--sub)}
+.empty strong{display:block;color:var(--ink);margin-bottom:4px}
+.upl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
+.upl select,.upl input[type=text]{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+.upl input[type=text]{flex:1 1 220px;min-width:0}
+.btn{display:inline-block;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:8px;font:inherit;cursor:pointer}
+.btn.pri{background:var(--navy);border-color:var(--navy);color:var(--card)}
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:8px}
+.ph{margin:0;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.ph button{border:0;padding:0;background:var(--navy-soft);cursor:zoom-in;aspect-ratio:4/3;display:block;width:100%}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph figcaption{padding:6px 10px;font-size:13px;display:flex;justify-content:space-between;gap:6px;align-items:flex-start}
+.ph figcaption span:first-child{min-width:0;overflow-wrap:anywhere}
+.ph .tag{font-size:11px;color:var(--gold);white-space:nowrap}
+.overlay{position:fixed;inset:0;background:rgba(10,14,22,.82);display:flex;align-items:center;justify-content:center;z-index:20;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.card{background:var(--card);color:var(--ink);border-radius:14px;padding:18px;width:min(420px,100%);max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:14px}
+.card .big{width:min(240px,70%);aspect-ratio:3/4;margin:0 auto;border-radius:8px;overflow:hidden;background:var(--navy-soft);display:flex;align-items:center;justify-content:center}
+.card .big img{width:100%;height:100%;object-fit:cover}
+.card .big .ini{font-family:var(--display);font-size:56px;color:var(--navy);opacity:.55}
+.card h3{font-family:var(--display);font-size:26px;margin:0;text-align:center}
+.rows{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;background:var(--navy-soft)}
+.row.fixed{background:var(--gold-soft)}
+.row label{color:var(--sub);font-size:14px}
+.row .val{font-weight:700;color:var(--gold)}
+.row select{font:inherit;font-weight:700;color:var(--navy);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:4px 8px}
+.row .saved{font-size:12px;color:var(--ok);min-width:42px;text-align:right}
+.row .saved.err{color:var(--warn)}
+.card .note{font-size:12px;color:var(--sub);margin:0;text-align:center}
+.lb{flex-direction:column;gap:10px}
+.lb img{max-height:80vh;border-radius:6px}
+.lb p{color:#eef1f8;margin:0;text-align:center}
+footer{margin-top:40px;color:var(--sub);font-size:12px}
+@media (max-width:520px){h1{font-size:25px}.faces{grid-template-columns:repeat(3,1fr);gap:12px 8px}.face .nm{font-size:14px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img class="logo" src="logo-brown.svg" alt="마산고등학교 교표">
+    <div class="ht">
+      <div class="eyebrow" id="school">마산고등학교 동문회</div>
+      <h1 id="title">온라인 졸업앨범</h1>
+      <div class="stats" id="stats">앨범을 불러오는 중…</div>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="t-album" aria-selected="true">졸업앨범</button>
+    <button class="tab" role="tab" id="t-photo" aria-selected="false">사진첩</button>
+  </div>
+
+  <section id="v-album">
+    <div class="tabs" id="gradePick"></div>
+    <div class="chips" id="classPick"></div>
+    <p class="hint" id="albumHint"></p>
+    <div class="page" id="page"></div>
+  </section>
+
+  <section id="v-photo" hidden>
+    <div class="upl">
+      <select id="upEvent" aria-label="사진 분류"></select>
+      <input type="text" id="upCap" maxlength="200" placeholder="설명 (선택) 예: 경주 불국사 앞 3학년 2반">
+      <label class="btn pri" for="upFile">사진 올리기</label>
+      <input type="file" id="upFile" accept="image/*" multiple hidden>
+    </div>
+    <p class="hint" id="upMsg">여러 장을 한 번에 고를 수 있어요. 큰 사진은 자동으로 줄여서 올려요.</p>
+    <div class="tabs" id="eventPick"></div>
+    <div class="photos" id="photos"></div>
+  </section>
+
+  <footer>사진이 잘못 들어갔거나 지워야 할 사진이 있으면 동문회 운영진에게 알려 주세요.</footer>
+</div>
+
+<div class="overlay" id="pv" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="pvName">
+    <div class="big" id="pvPic"></div>
+    <h3 id="pvName"></h3>
+    <div class="rows" id="pvRows"></div>
+    <p class="note">1·2학년 반은 기억나는 대로 골라 주세요. 고르면 바로 저장되고 모두에게 보여요.</p>
+    <button class="btn" id="pvClose">닫기</button>
+  </div>
+</div>
+<div class="overlay lb" id="lb" hidden><img id="lbImg" alt=""><p id="lbCap"></p><button class="btn" id="lbClose">닫기</button></div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+const CFG = window.ALBUM_CONFIG || {};
+const EVENTS = ['수학여행','졸업식','수련회','체육대회','교실','기타'];
+const GRADES = [3, 2, 1];   // 3학년부터 거꾸로
+const YEARS = CFG.YEARS || {};
+const gName = g => YEARS[g] ? `${YEARS[g]} · ${g}학년` : `${g}학년`;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// ---------- 저장소: Supabase 또는 데모 ----------
+const DEMO = !(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY && window.supabase);
+const api = DEMO ? demoApi() : supabaseApi(window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY));
+
+function supabaseApi(sb){
+  const must = r => { if(r.error) throw r.error; return r.data };
+  return {
+    async load(){
+      const [r, a, p, t] = await Promise.all([
+        sb.from('roster').select('id,name,c3,portrait').order('id').range(0, 4999),
+        sb.from('answers').select('person_id,c1,c2').range(0, 4999),
+        sb.from('photos').select('id,path,event,caption,created_at').order('created_at', {ascending:false}).range(0, 1999),
+        sb.from('teachers').select('id,name,role,subject,grade,class,portrait').order('id'),
+      ]);
+      return { roster: must(r), answers: must(a), photos: must(p), teachers: must(t) };
+    },
+    async setAnswer(id, row){ must(await sb.from('answers').upsert({ person_id:id, c1:row.c1 ?? null, c2:row.c2 ?? null })) },
+    async addPhoto(blob, event, caption){
+      const path = `${new Date().toISOString().slice(0,10)}/${crypto.randomUUID()}.jpg`;
+      must(await sb.storage.from('photos').upload(path, blob, { contentType:'image/jpeg' }));
+      must(await sb.from('photos').insert({ path, event, caption: caption || null }));
+    },
+    url: path => sb.storage.from('photos').getPublicUrl(path).data.publicUrl,
+    portrait: path => path ? sb.storage.from('portraits').getPublicUrl(path).data.publicUrl : null,
+  };
+}
+
+function demoApi(){
+  const roster = [
+    {id:'3-02-01', name:'김설기', c3:2}, {id:'3-02-02', name:'이진권', c3:2},
+    {id:'3-01-01', name:'예시 박민수', c3:1}, {id:'3-05-01', name:'예시 최영호', c3:5}, {id:'3-05-02', name:'예시 정우성', c3:5},
+  ];
+  const answers = [{person_id:'3-02-01', c2:3}, {person_id:'3-02-02', c2:3}];
+  const teachers = [{id:'t-01', name:'정희상', role:'담임', grade:3, class:2}, {id:'t-02', name:'예시 교과', role:'교과', subject:'수학', grade:3}];
+  const photos = [], blobs = {};
+  return {
+    async load(){ return { roster, answers:[...answers], photos:[...photos], teachers } },
+    async setAnswer(id, row){ const i = answers.findIndex(a => a.person_id === id); const v = {person_id:id, c1:row.c1, c2:row.c2}; i < 0 ? answers.push(v) : answers[i] = v },
+    async addPhoto(blob, event, caption){ const id = String(Date.now() + Math.random()); blobs[id] = URL.createObjectURL(blob); photos.unshift({id, path:id, event, caption, created_at:new Date().toISOString()}) },
+    url: path => blobs[path],
+    portrait: () => null,
+  };
+}
+
+// ---------- 상태 ----------
+let roster = [], answers = {}, photos = [], teachers = [], loaded = false, loadErr = false;
+let grade = 3, klass = null, evFilter = '전체', openId = null;
+const cls = (p, g) => g === 3 ? p.c3 : (answers[p.id] || {})['c' + g] ?? null;
+const maxClass = () => Math.max(CFG.MAX_CLASS || 12, ...roster.map(p => p.c3 || 0));
+const ini = name => esc(String(name).replace(/^예시\s*/, '').slice(0, 1));
+const pic = p => { const u = api.portrait(p.portrait); return u ? `<img src="${esc(u)}" alt="${esc(p.name)}" loading="lazy">` : `<span class="ini" aria-hidden="true">${ini(p.name)}</span>` };
+
+async function refresh(){
+  try{
+    const d = await api.load();
+    roster = d.roster; photos = d.photos; teachers = d.teachers || [];
+    answers = {}; d.answers.forEach(a => answers[a.person_id] = a);
+    loaded = true; loadErr = false;
+  }catch(e){ console.error(e); loadErr = true; loaded = true }
+  renderStats(); renderPhotos();
+  if(!openId) renderAlbum();   // 개인 카드를 보는 중이면 뒤 화면은 그대로 둔다
+}
+
+// ---------- 화면 ----------
+function renderStats(){
+  const tag = DEMO ? ' <span class="demo">데모 · 예시 데이터</span>' : '';
+  if(loadErr){ $('stats').innerHTML = '앨범을 불러오지 못했어요. 잠시 뒤 새로고침해 주세요.' + tag; return }
+  const n = roster.length;
+  if(!n){ $('stats').innerHTML = '졸업앨범을 준비하고 있어요.' + tag; return }
+  const withPic = roster.filter(p => p.portrait).length;
+  const f1 = roster.filter(p => cls(p,1)).length, f2 = roster.filter(p => cls(p,2)).length;
+  $('stats').innerHTML = `<span>졸업생 <b>${n}</b>명</span><span>개인 사진 <b>${withPic}</b>/${n}</span><span>1학년 반 <b>${f1}</b>/${n}</span><span>2학년 반 <b>${f2}</b>/${n}</span><span>사진첩 <b>${photos.length}</b>장</span>${tag}`;
+}
+
+function groups(){
+  const by = {}, none = [];
+  roster.forEach(p => { const c = cls(p, grade); c ? (by[c] = by[c] || []).push(p) : none.push(p) });
+  return { by, none, keys: Object.keys(by).map(Number).sort((a,b) => a-b) };
+}
+
+function renderAlbum(){
+  $('gradePick').innerHTML = GRADES.map(g => `<button class="tab" data-g="${g}" aria-selected="${g===grade}">${gName(g)}</button>`).join('');
+  if(!loaded){ $('page').innerHTML = '<div class="empty">앨범을 불러오는 중이에요…</div>'; $('classPick').innerHTML = ''; return }
+  if(!roster.length){ $('classPick').innerHTML = ''; $('page').innerHTML = '<div class="empty"><strong>아직 앨범이 비어 있어요</strong>졸업앨범 사진을 옮기는 중이에요.</div>'; return }
+  const { by, none, keys } = groups();
+  const tAll = teachersOf(grade);
+  tAll.filter(t => t.role === '담임' && t.class && !keys.includes(t.class)).forEach(t => keys.push(t.class));
+  keys.sort((a,b) => a-b);
+  const all = [...keys, ...(grade !== 3 && none.length ? ['?'] : []), ...(tAll.length ? ['T'] : [])];
+  if(!all.map(String).includes(String(klass))) klass = all[0] ?? null;
+  $('classPick').innerHTML = all.map(k => `<button class="chip" data-c="${k}" aria-selected="${String(k)===String(klass)}">${k === '?' ? '모름' : k === 'T' ? '선생님' : k + '반'}</button>`).join('');
+  $('albumHint').textContent = grade === 3
+    ? '사진을 누르면 1·2학년 때 반을 입력할 수 있어요.'
+    : `${gName(grade)} 반은 동문들이 입력한 대로 모여요. 반이 비어 있으면 "모름"에서 친구를 찾아 입력해 주세요.`;
+  if(klass === null){ $('page').innerHTML = '<div class="empty"><strong>아직 입력된 반이 없어요</strong>3학년 앨범에서 사진을 눌러 입력해 주세요.</div>'; return }
+  if(klass === 'T'){
+    const sorted = tAll.slice().sort((a,b) => (a.role === '담임' ? 0 : 1) - (b.role === '담임' ? 0 : 1) || (a.class||99) - (b.class||99) || a.name.localeCompare(b.name,'ko'));
+    $('page').innerHTML = `<h2>${esc(gName(grade))} 선생님 <span>${sorted.length}분</span></h2><div class="faces">${sorted.map(teacherCard).join('')}</div>`;
+    return;
+  }
+  const homeroom = klass === '?' ? [] : tAll.filter(t => t.role === '담임' && t.class === klass);
+  const list = (klass === '?' ? none : by[klass] || []).slice().sort((a,b) => grade === 3 ? a.id.localeCompare(b.id) : a.name.localeCompare(b.name,'ko'));
+  const title = klass === '?' ? `${gName(grade)} · 반 모름` : `${gName(grade)} ${klass}반`;
+  $('page').innerHTML = `<h2>${esc(title)} <span>${list.length}명</span></h2>
+    ${homeroom.length ? `<div class="faces homeroom">${homeroom.map(teacherCard).join('')}</div>` : ''}
+    <div class="faces">${list.map(p => `<button class="face" data-id="${esc(p.id)}"><span class="pic">${pic(p)}</span><span class="nm">${esc(p.name)}</span></button>`).join('')}</div>`;
+}
+
+// 그 학년의 선생님: 학년이 정해진 분 + 학년 미정(전 학년) 교과 선생님
+function teachersOf(g){ return teachers.filter(t => t.grade === g || (!t.grade && t.role === '교과')) }
+function teacherCard(t){
+  const role = t.role === '담임' ? `담임${t.class ? ' · ' + t.grade + '-' + t.class : ''}` : (t.subject || '교과');
+  return `<div class="face teacher"><span class="pic">${pic(t)}</span><span class="nm">${esc(t.name)} 선생님</span><span class="role">${esc(role)}</span></div>`;
+}
+
+function openPerson(id){
+  const p = roster.find(x => x.id === id); if(!p) return;
+  openId = id;
+  $('pvPic').innerHTML = pic(p);
+  $('pvName').textContent = p.name;
+  $('pvRows').innerHTML = GRADES.map(g => {
+    if(g === 3) return `<div class="row fixed"><label>${gName(3)}</label><span class="val">${p.c3 ? p.c3 + '반' : '–'}</span></div>`;
+    const v = cls(p, g);
+    let opts = '<option value="">모름</option>';
+    for(let i = 1; i <= maxClass(); i++) opts += `<option value="${i}"${v === i ? ' selected' : ''}>${i}반</option>`;
+    return `<div class="row"><label for="pv-${g}">${gName(g)}</label><span style="display:flex;gap:8px;align-items:center"><span class="saved" id="ok-${g}"></span><select id="pv-${g}" data-g="${g}">${opts}</select></span></div>`;
+  }).join('');
+  $('pv').hidden = false;
+  $('pvClose').focus();
+}
+function closePerson(){ $('pv').hidden = true; openId = null; renderAlbum() }
+
+function renderPhotos(){
+  const counts = {}; photos.forEach(p => counts[p.event] = (counts[p.event]||0) + 1);
+  $('eventPick').innerHTML = ['전체', ...EVENTS].filter(e => e === '전체' || counts[e])
+    .map(e => `<button class="tab" data-e="${e}" aria-selected="${e===evFilter}">${e} <small>${e==='전체' ? photos.length : counts[e]}</small></button>`).join('');
+  const list = photos.filter(p => evFilter === '전체' || p.event === evFilter);
+  $('photos').innerHTML = list.length ? list.map(p => `
+    <figure class="ph">
+      <button data-id="${esc(p.id)}" aria-label="크게 보기"><img src="${esc(api.url(p.path))}" alt="${esc(p.caption || p.event)}" loading="lazy"></button>
+      <figcaption><span>${esc(p.caption || '')}</span><span class="tag">${esc(p.event)}</span></figcaption>
+    </figure>`).join('')
+    : '<div class="empty" style="grid-column:1/-1"><strong>아직 사진이 없어요</strong>수학여행, 졸업식 사진을 골라 "사진 올리기"를 누르세요.</div>';
+}
+
+function show(view){
+  ['album','photo'].forEach(v => { $('t-' + v).setAttribute('aria-selected', v === view); $('v-' + v).hidden = v !== view });
+}
+
+// ---------- 동작 ----------
+['album','photo'].forEach(v => $('t-' + v).onclick = () => show(v));
+$('gradePick').onclick = e => { const b = e.target.closest('[data-g]'); if(b){ grade = +b.dataset.g; klass = null; renderAlbum() } };
+$('classPick').onclick = e => { const b = e.target.closest('[data-c]'); if(b){ const c = b.dataset.c; klass = (c === '?' || c === 'T') ? c : +c; renderAlbum() } };
+$('page').onclick = e => { const b = e.target.closest('.face[data-id]'); if(b) openPerson(b.dataset.id) };
+$('pvClose').onclick = closePerson;
+$('pv').onclick = e => { if(e.target === $('pv')) closePerson() };
+$('eventPick').onclick = e => { const b = e.target.closest('[data-e]'); if(b){ evFilter = b.dataset.e; renderPhotos() } };
+$('upEvent').innerHTML = EVENTS.map(e => `<option>${e}</option>`).join('');
+
+let saving = Promise.resolve();
+$('pvRows').addEventListener('change', async e => {
+  const s = e.target; if(s.tagName !== 'SELECT' || !openId) return;
+  const id = openId, g = s.dataset.g, ok = $('ok-' + g);
+  answers[id] = { ...(answers[id] || { person_id:id }), ['c' + g]: s.value ? +s.value : null };
+  ok.className = 'saved'; ok.textContent = '저장 중…';
+  saving = saving.catch(() => {}).then(() => api.setAnswer(id, answers[id]));
+  try{ await saving; ok.textContent = '저장됨'; renderStats() }
+  catch(err){ console.error(err); ok.className = 'saved err'; ok.textContent = '저장 안 됨' }
+});
+
+$('photos').onclick = e => {
+  const b = e.target.closest('button[data-id]'); if(!b) return;
+  const p = photos.find(x => x.id === b.dataset.id); if(!p) return;
+  $('lbImg').src = api.url(p.path); $('lbCap').textContent = [p.event, p.caption].filter(Boolean).join(' · '); $('lb').hidden = false;
+};
+$('lbClose').onclick = () => $('lb').hidden = true;
+$('lb').onclick = e => { if(e.target === $('lb')) $('lb').hidden = true };
+document.addEventListener('keydown', e => { if(e.key === 'Escape'){ $('lb').hidden = true; if(openId) closePerson() } });
+
+// 큰 사진을 긴 변 2000px JPEG 로 줄인다 (용량 절약)
+async function shrink(file){
+  const img = await createImageBitmap(file, { imageOrientation:'from-image' }).catch(() => null);
+  if(!img) return file;
+  const k = Math.min(1, 2000 / Math.max(img.width, img.height));
+  const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return new Promise(r => c.toBlob(b => r(b || file), 'image/jpeg', 0.85));
+}
+
+$('upFile').onchange = async e => {
+  const files = [...e.target.files]; e.target.value = '';
+  if(!files.length) return;
+  const event = $('upEvent').value, caption = $('upCap').value.trim();
+  let ok = 0, fail = 0;
+  for(const f of files){
+    $('upMsg').textContent = `올리는 중… ${ok + fail + 1}/${files.length}`;
+    try{ await api.addPhoto(await shrink(f), event, caption); ok++ }
+    catch(err){ console.error(err); fail++ }
+  }
+  $('upMsg').textContent = fail ? `${ok}장 올렸고 ${fail}장은 실패했어요. 사진 파일인지 확인해 주세요.` : `${ok}장 올렸어요.`;
+  $('upCap').value = '';
+  evFilter = '전체'; await refresh();
+};
+
+{
+  const ys = Object.values(YEARS).map(Number).filter(Boolean).sort();
+  const span = ys.length ? `${ys[0]}–${ys[ys.length - 1]}` : '';
+  $('school').textContent = [CFG.SCHOOL || '마산고등학교', span].filter(Boolean).join(' · ');
+  if(CFG.CLASS_OF){ $('title').textContent = `${CFG.CLASS_OF} 졸업앨범`; document.title = `마산고 ${CFG.CLASS_OF} 졸업앨범` }
+}
+renderAlbum(); renderPhotos();
+refresh();
+// 다른 동문이 입력한 내용을 반영: 탭으로 돌아올 때 + 1분마다
+document.addEventListener('visibilitychange', () => { if(!document.hidden) refresh() });
+setInterval(() => { if(!document.hidden) refresh() }, 60000);
+</script>
+</body>
+</html>
