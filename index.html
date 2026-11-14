@@ -79,6 +79,12 @@ h1{font-family:var(--display);font-size:30px;font-weight:700;margin:0;text-wrap:
 .ph figcaption span:first-child{min-width:0;overflow-wrap:anywhere}
 .ph .tag{font-size:11px;color:var(--gold);white-space:nowrap}
 .ph .by{display:block;font-size:11px;color:var(--sub);margin-top:2px}
+.classpic{max-width:620px;margin:0 0 18px}
+.classpic .ph button,.photos.book .ph button{aspect-ratio:auto}
+.classpic .ph img,.photos.book .ph img{height:auto}
+.photos.book{align-items:start}
+.page h3{font-family:var(--display);font-size:18px;margin:22px 0 4px;padding-top:16px;border-top:1px dashed var(--line);display:flex;align-items:baseline;gap:8px}
+.page h3 span{font-family:var(--body);font-size:13px;color:var(--sub);font-weight:400}
 .picklabel{font-size:12px;color:var(--sub);margin:10px 0 4px}
 .upl input#upWho{flex:0 1 150px}
 .overlay{position:fixed;inset:0;background:rgba(10,14,22,.82);display:flex;align-items:center;justify-content:center;z-index:20;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
@@ -210,6 +216,13 @@ const EVENTS = ['수학여행','수련회','체육대회','교실','졸업앨범
 // 사진 나열: 행사 순서 → 운영진이 매긴 순서 번호(단체사진 먼저) → 올린 순서. 새로 올린 사진은 그 행사 맨 뒤에 붙는다.
 const evRank = e => { const i = EVENTS.indexOf(e); return i < 0 ? EVENTS.length : i };
 const byAlbumOrder = (a, b) => evRank(a.event) - evRank(b.event) || (a.sort_order ?? 1e9) - (b.sort_order ?? 1e9) || String(a.created_at).localeCompare(String(b.created_at));
+// 졸업앨범 책에서 옮긴 사진(행사 '졸업앨범')은 사진첩이 아니라 졸업앨범 탭의 3학년 반별 화면에 나온다.
+// 어느 반인지는 설명 맨 앞의 "3학년 N반"으로 읽는다. 반이 안 적힌 사진(대의원 등)은 "그 밖의 사진"에 모인다.
+const BOOK = '졸업앨범';
+const isBook = p => p.event === BOOK;
+const bookClass = p => { const m = /^\s*3학년\s*(\d+)\s*반/.exec(p.caption || ''); return m ? +m[1] : null };
+const bookCap = p => (p.caption || '').replace(/^\s*3학년\s*\d+\s*반\s*/, '');
+const shelf = () => photos.filter(p => !isBook(p));   // 사진첩에 나오는 사진
 const GRADES = [3, 2, 1];   // 3학년부터 거꾸로
 const YEARS = CFG.YEARS || {};
 const gName = g => YEARS[g] ? `${YEARS[g]} · ${g}학년` : `${g}학년`;
@@ -300,7 +313,7 @@ function renderStats(){
   if(!n){ $('stats').innerHTML = '졸업앨범을 준비하고 있어요.' + tag; return }
   const withPic = roster.filter(p => p.portrait).length;
   const f1 = roster.filter(p => cls(p,1)).length, f2 = roster.filter(p => cls(p,2)).length;
-  $('stats').innerHTML = `<span>졸업생 <b>${n}</b>명</span><span>개인 사진 <b>${withPic}</b>/${n}</span><span>1학년 반 <b>${f1}</b>/${n}</span><span>2학년 반 <b>${f2}</b>/${n}</span><span>사진첩 <b>${photos.length}</b>장</span>${tag}`;
+  $('stats').innerHTML = `<span>졸업생 <b>${n}</b>명</span><span>개인 사진 <b>${withPic}</b>/${n}</span><span>1학년 반 <b>${f1}</b>/${n}</span><span>2학년 반 <b>${f2}</b>/${n}</span><span>사진첩 <b>${shelf().length}</b>장</span>${tag}`;
 }
 
 function groups(){
@@ -336,9 +349,11 @@ function renderAlbum(){
   const tAll = teachersOf(grade);
   tAll.filter(t => t.role === '담임' && t.class && !keys.includes(t.class)).forEach(t => keys.push(t.class));
   keys.sort((a,b) => a-b);
-  const all = [...keys, ...(grade !== 3 && none.length ? ['?'] : []), ...(tAll.length ? ['T'] : [])];
+  const book = grade === 3 ? photos.filter(isBook) : [];
+  const extra = book.filter(p => !keys.includes(bookClass(p)));
+  const all = [...keys, ...(grade !== 3 && none.length ? ['?'] : []), ...(tAll.length ? ['T'] : []), ...(extra.length ? ['X'] : [])];
   if(!all.map(String).includes(String(klass))) klass = all[0] ?? null;
-  $('classPick').innerHTML = all.map(k => `<button class="chip" data-c="${k}" aria-selected="${String(k)===String(klass)}">${k === '?' ? '모름' : k === 'T' ? '선생님' : k + '반'}</button>`).join('');
+  $('classPick').innerHTML = all.map(k => `<button class="chip" data-c="${k}" aria-selected="${String(k)===String(klass)}">${k === '?' ? '모름' : k === 'T' ? '선생님' : k === 'X' ? '그 밖의 사진' : k + '반'}</button>`).join('');
   $('albumHint').textContent = grade === 3
     ? '이름이나 사진을 누르면 그 친구의 1·2학년 때 반을 입력할 수 있어요. 내 것도, 기억나는 친구 것도 괜찮아요.'
     : `${gName(grade)} 반은 동문들이 입력한 대로 모여요. 반이 비어 있으면 "모름"에서 친구 이름을 눌러 입력해 주세요.`;
@@ -348,12 +363,24 @@ function renderAlbum(){
     $('page').innerHTML = `<h2>${esc(gName(grade))} 선생님 <span>${sorted.length}분</span></h2><div class="faces">${sorted.map(teacherCard).join('')}</div>`;
     return;
   }
+  if(klass === 'X'){
+    $('page').innerHTML = `<h2>${esc(gName(grade))} · 그 밖의 사진 <span>${extra.length}장</span></h2><div class="photos book">${extra.map(p => bookFig(p, p.caption)).join('')}</div>`;
+    return;
+  }
+  const mine = klass === '?' ? [] : book.filter(p => bookClass(p) === klass);
+  const group = mine.filter(p => /단체/.test(p.caption || '')), rest = mine.filter(p => !group.includes(p));
   const homeroom = klass === '?' ? [] : tAll.filter(t => t.role === '담임' && t.class === klass);
   const list = (klass === '?' ? none : by[klass] || []).slice().sort((a,b) => grade === 3 ? a.id.localeCompare(b.id) : a.name.localeCompare(b.name,'ko'));
   const title = klass === '?' ? `${gName(grade)} · 반 모름` : `${gName(grade)} ${klass}반`;
   $('page').innerHTML = `<h2>${esc(title)} <span>${list.length}명</span></h2>
+    ${group.length ? `<div class="classpic">${group.map(p => bookFig(p, bookCap(p))).join('')}</div>` : ''}
     ${homeroom.length ? `<div class="faces homeroom">${homeroom.map(teacherCard).join('')}</div>` : ''}
-    <div class="faces">${list.map(p => `<button class="face" data-id="${esc(p.id)}" title="누르면 1·2학년 반을 입력할 수 있어요"><span class="pic">${pic(p)}</span><span class="nm">${esc(p.name)}</span>${todo(p)}</button>`).join('')}</div>`;
+    <div class="faces">${list.map(p => `<button class="face" data-id="${esc(p.id)}" title="누르면 1·2학년 반을 입력할 수 있어요"><span class="pic">${pic(p)}</span><span class="nm">${esc(p.name)}</span>${todo(p)}</button>`).join('')}</div>
+    ${rest.length ? `<h3>교실·조별 사진 <span>${rest.length}장</span></h3><div class="photos book">${rest.map(p => bookFig(p, bookCap(p))).join('')}</div>` : ''}`;
+}
+// 졸업앨범 책에서 옮긴 사진 한 장. 잘리지 않게 원래 비율로 보여 준다
+function bookFig(p, cap){
+  return `<figure class="ph"><button data-ph="${esc(p.id)}" aria-label="크게 보기"><img src="${esc(api.url(p.path))}" alt="${esc(p.caption || BOOK)}" loading="lazy"></button>${cap ? `<figcaption><span>${esc(cap)}</span></figcaption>` : ''}</figure>`;
 }
 
 // 그 학년의 선생님: 학년이 정해진 분 + 학년 미정(전 학년) 교과 선생님
@@ -391,6 +418,7 @@ function whoClasses(name){
   return GRADES.slice().reverse().map(g => { const c = cls(m[0], g); return c ? `${gName(g)} ${c}반` : '' }).filter(Boolean).join(' / ');
 }
 function renderPhotos(){
+  const photos = shelf();   // 졸업앨범 책 사진은 졸업앨범 탭에 나온다
   const byWho = {}; photos.forEach(p => byWho[whoOf(p)] = (byWho[whoOf(p)] || 0) + 1);
   const whos = Object.keys(byWho).sort((a, b) => (a === NOBODY) - (b === NOBODY) || byWho[b] - byWho[a] || a.localeCompare(b, 'ko'));
   if(whoFilter !== '전체' && !byWho[whoFilter]) whoFilter = '전체';
@@ -428,15 +456,15 @@ function clearSearch(render = true){ q = ''; $('q').value = ''; if(render) rende
 $('q').addEventListener('input', () => { q = $('q').value; renderAlbum() });
 $('q').addEventListener('keydown', e => { if(e.key === 'Escape') clearSearch() });
 $('qClear').onclick = () => { clearSearch(); $('q').focus() };
-$('classPick').onclick = e => { const b = e.target.closest('[data-c]'); if(b){ const c = b.dataset.c; klass = (c === '?' || c === 'T') ? c : +c; renderAlbum() } };
-$('page').onclick = e => { const b = e.target.closest('.face[data-id]'); if(b) openPerson(b.dataset.id) };
+$('classPick').onclick = e => { const b = e.target.closest('[data-c]'); if(b){ const c = b.dataset.c; klass = (c === '?' || c === 'T' || c === 'X') ? c : +c; renderAlbum() } };
+$('page').onclick = e => { const b = e.target.closest('.face[data-id]'); if(b) return openPerson(b.dataset.id); const f = e.target.closest('button[data-ph]'); if(f) openPhoto(f.dataset.ph) };
 $('pvClose').onclick = closePerson;
 $('pv').onclick = e => { if(e.target === $('pv')) closePerson() };
 $('eventPick').onclick = e => { const b = e.target.closest('[data-e]'); if(b){ evFilter = b.dataset.e; renderPhotos() } };
 $('whoPick').onclick = e => { const b = e.target.closest('[data-w]'); if(b){ whoFilter = b.dataset.w; evFilter = '전체'; renderPhotos() } };
 const WHO_KEY = 'mago-album-who';
 try{ $('upWho').value = localStorage.getItem(WHO_KEY) || '' }catch(e){}
-$('upEvent').innerHTML = EVENTS.map(e => `<option>${e}</option>`).join('');
+$('upEvent').innerHTML = EVENTS.filter(e => e !== BOOK).map(e => `<option>${e}</option>`).join('');
 
 let saving = Promise.resolve();
 $('pvRows').addEventListener('change', async e => {
@@ -459,11 +487,11 @@ $('gateForm').onsubmit = async e => {
 };
 $('lock').onclick = () => { savePw(''); roster = []; photos = []; teachers = []; answers = {}; loaded = false; renderAlbum(); showGate() };
 
-$('photos').onclick = e => {
-  const b = e.target.closest('button[data-id]'); if(!b) return;
-  const p = photos.find(x => x.id === b.dataset.id); if(!p) return;
-  $('lbImg').src = api.url(p.path); $('lbCap').textContent = [p.event, p.caption, p.contributor ? whoOf(p) + ' 제공' : ''].filter(Boolean).join(' · '); $('lb').hidden = false;
-};
+function openPhoto(id){
+  const p = photos.find(x => x.id === id); if(!p) return;
+  $('lbImg').src = api.url(p.path); $('lbCap').textContent = isBook(p) ? [BOOK, p.caption].filter(Boolean).join(' · ') : [p.event, p.caption, p.contributor ? whoOf(p) + ' 제공' : ''].filter(Boolean).join(' · '); $('lb').hidden = false;
+}
+$('photos').onclick = e => { const b = e.target.closest('button[data-id]'); if(b) openPhoto(b.dataset.id) };
 $('lbClose').onclick = () => $('lb').hidden = true;
 $('lb').onclick = e => { if(e.target === $('lb')) $('lb').hidden = true };
 document.addEventListener('keydown', e => { if(e.key === 'Escape'){ $('lb').hidden = true; if(openId) closePerson() } });
