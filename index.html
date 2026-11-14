@@ -206,7 +206,7 @@ footer{margin-top:40px;color:var(--sub);font-size:12px;line-height:1.7}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 const CFG = window.ALBUM_CONFIG || {};
-const EVENTS = ['수학여행','수련회','체육대회','교실','졸업식','기타'];   // 사진첩에 나오는 순서이기도 하다
+const EVENTS = ['수학여행','수련회','체육대회','교실','졸업앨범','졸업식','기타'];   // 사진첩에 나오는 순서이기도 하다
 // 사진 나열: 행사 순서 → 운영진이 매긴 순서 번호(단체사진 먼저) → 올린 순서. 새로 올린 사진은 그 행사 맨 뒤에 붙는다.
 const evRank = e => { const i = EVENTS.indexOf(e); return i < 0 ? EVENTS.length : i };
 const byAlbumOrder = (a, b) => evRank(a.event) - evRank(b.event) || (a.sort_order ?? 1e9) - (b.sort_order ?? 1e9) || String(a.created_at).localeCompare(String(b.created_at));
