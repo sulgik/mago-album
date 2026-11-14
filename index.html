@@ -223,6 +223,15 @@ const isBook = p => p.event === BOOK;
 const bookClass = p => { const m = /^\s*3학년\s*(\d+)\s*반/.exec(p.caption || ''); return m ? +m[1] : null };
 const bookCap = p => (p.caption || '').replace(/^\s*3학년\s*\d+\s*반\s*/, '');
 const shelf = () => photos.filter(p => !isBook(p));   // 사진첩에 나오는 사진
+// 학년을 아는 사진첩 사진은 사진 주인(제공자)의 그 학년 반 화면에도 함께 나온다. 같은 반 친구들이 많이 찍혀 있기 때문.
+// 학년은 사진의 grade 칸, 없으면 행사로 정한다(수학여행 = 2학년).
+const EVENT_GRADE = CFG.EVENT_GRADE || { '수학여행': 2 };
+const photoGrade = p => p.grade ?? EVENT_GRADE[p.event] ?? null;
+function photoClass(p, g){
+  if(isBook(p) || !p.contributor || photoGrade(p) !== g) return null;
+  const m = roster.filter(x => norm(x.name) === norm(p.contributor));   // 동명이인이면 어느 반인지 알 수 없다
+  return m.length === 1 ? cls(m[0], g) : null;
+}
 const GRADES = [3, 2, 1];   // 3학년부터 거꾸로
 const YEARS = CFG.YEARS || {};
 const gName = g => YEARS[g] ? `${YEARS[g]} · ${g}학년` : `${g}학년`;
@@ -370,13 +379,15 @@ function renderAlbum(){
   const mine = klass === '?' ? [] : book.filter(p => bookClass(p) === klass);
   const group = mine.filter(p => /단체/.test(p.caption || '')), rest = mine.filter(p => !group.includes(p));
   const homeroom = klass === '?' ? [] : tAll.filter(t => t.role === '담임' && t.class === klass);
+  const snaps = klass === '?' ? [] : shelf().filter(p => photoClass(p, grade) === klass);
   const list = (klass === '?' ? none : by[klass] || []).slice().sort((a,b) => grade === 3 ? a.id.localeCompare(b.id) : a.name.localeCompare(b.name,'ko'));
   const title = klass === '?' ? `${gName(grade)} · 반 모름` : `${gName(grade)} ${klass}반`;
   $('page').innerHTML = `<h2>${esc(title)} <span>${list.length}명</span></h2>
     ${group.length ? `<div class="classpic">${group.map(p => bookFig(p, bookCap(p))).join('')}</div>` : ''}
     ${homeroom.length ? `<div class="faces homeroom">${homeroom.map(teacherCard).join('')}</div>` : ''}
     <div class="faces">${list.map(p => `<button class="face" data-id="${esc(p.id)}" title="누르면 1·2학년 반을 입력할 수 있어요"><span class="pic">${pic(p)}</span><span class="nm">${esc(p.name)}</span>${todo(p)}</button>`).join('')}</div>
-    ${rest.length ? `<h3>교실·조별 사진 <span>${rest.length}장</span></h3><div class="photos book">${rest.map(p => bookFig(p, bookCap(p))).join('')}</div>` : ''}`;
+    ${rest.length ? `<h3>교실·조별 사진 <span>${rest.length}장</span></h3><div class="photos book">${rest.map(p => bookFig(p, bookCap(p))).join('')}</div>` : ''}
+    ${snaps.length ? `<h3>${grade}학년 때 사진 <span>${snaps.length}장 · 이 반 동문이 올린 사진</span></h3><div class="photos book">${snaps.map(p => bookFig(p, [p.caption, p.event, whoOf(p) + ' 제공'].filter(Boolean).join(' · '))).join('')}</div>` : ''}`;
 }
 // 졸업앨범 책에서 옮긴 사진 한 장. 잘리지 않게 원래 비율로 보여 준다
 function bookFig(p, cap){

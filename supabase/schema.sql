@@ -47,6 +47,7 @@ create table if not exists photos (
   contributor text check (char_length(contributor) <= 40),   -- 사진 주인(제공자) 이름. 사진첩을 이 기준으로 나눈다
   hidden     boolean default false,     -- 운영진이 true 로 바꾸면 사이트에서 숨김
   sort_order int,                       -- 행사 안에서의 순서 번호(작을수록 앞). 비어 있으면 그 행사 맨 뒤
+  grade      int check (grade between 1 and 3),   -- 몇 학년 때 사진인지. 적혀 있으면 사진 주인의 그 학년 반 화면에도 나온다
   created_at timestamptz default now()
 );
 
