@@ -13,6 +13,7 @@
 | `supabase/schema.sql` | 표·접근 규칙·사진 버킷 생성 |
 | `supabase/password.sql` | 공유 비밀번호 잠금. 표 직접 읽기를 막고 `album_*` 함수로만 읽고 쓴다 |
 | `supabase/contributor.sql` | 사진첩에 "사진 주인(제공자)" 칸 추가. 이미 운영 중인 서버에서 한 번 실행 |
+| `supabase/order.sql` | 사진첩 나열 순서(행사 순서 → 순서 번호 → 올린 순서). `contributor.sql` 다음에 한 번 실행 |
 | `tools/roster_to_sql.py` | 명단 CSV → 넣기용 SQL |
 
 데이터 규칙:
