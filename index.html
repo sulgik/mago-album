@@ -78,6 +78,9 @@ h1{font-family:var(--display);font-size:30px;font-weight:700;margin:0;text-wrap:
 .ph figcaption{padding:6px 10px;font-size:13px;display:flex;justify-content:space-between;gap:6px;align-items:flex-start}
 .ph figcaption span:first-child{min-width:0;overflow-wrap:anywhere}
 .ph .tag{font-size:11px;color:var(--gold);white-space:nowrap}
+.ph .by{display:block;font-size:11px;color:var(--sub);margin-top:2px}
+.picklabel{font-size:12px;color:var(--sub);margin:10px 0 4px}
+.upl input#upWho{flex:0 1 150px}
 .overlay{position:fixed;inset:0;background:rgba(10,14,22,.82);display:flex;align-items:center;justify-content:center;z-index:20;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .card{background:var(--card);color:var(--ink);border-radius:14px;padding:18px;width:min(420px,100%);max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:14px}
 .card .big{width:min(240px,70%);aspect-ratio:3/4;margin:0 auto;border-radius:8px;overflow:hidden;background:var(--navy-soft);display:flex;align-items:center;justify-content:center}
@@ -144,11 +147,16 @@ footer{margin-top:40px;color:var(--sub);font-size:12px;line-height:1.7}
   <section id="v-photo" hidden>
     <div class="upl">
       <select id="upEvent" aria-label="사진 분류"></select>
+      <input type="text" id="upWho" maxlength="40" list="whoList" placeholder="사진 주인 이름" aria-label="사진 주인(제공자) 이름">
+      <datalist id="whoList"></datalist>
       <input type="text" id="upCap" maxlength="200" placeholder="설명 (선택) 예: 경주 불국사 앞 3학년 2반">
       <label class="btn pri" for="upFile">사진 올리기</label>
       <input type="file" id="upFile" accept="image/*" multiple hidden>
     </div>
     <p class="hint" id="upMsg">여러 장을 한 번에 고를 수 있어요. 큰 사진은 자동으로 줄여서 올려요.</p>
+    <div class="picklabel" id="whoLabel" hidden>누구 사진첩</div>
+    <div class="tabs" id="whoPick"></div>
+    <p class="hint" id="whoHint" hidden></p>
     <div class="tabs" id="eventPick"></div>
     <div class="photos" id="photos"></div>
   </section>
@@ -224,10 +232,13 @@ function supabaseApi(sb){
   return {
     async load(){ return must(await sb.rpc('album_load', { pw: PW })) },
     async setAnswer(id, row){ must(await sb.rpc('album_set_answer', { pw: PW, p_person:id, p_c1: row.c1 ?? null, p_c2: row.c2 ?? null })) },
-    async addPhoto(blob, event, caption){
+    async addPhoto(blob, event, caption, who){
       const path = `${new Date().toISOString().slice(0,10)}/${crypto.randomUUID()}.jpg`;
       must(await sb.storage.from('photos').upload(path, blob, { contentType:'image/jpeg' }));
-      must(await sb.rpc('album_add_photo', { pw: PW, p_path: path, p_event: event, p_caption: caption || '' }));
+      const args = { pw: PW, p_path: path, p_event: event, p_caption: caption || '' };
+      let r = await sb.rpc('album_add_photo', { ...args, p_contributor: who || '' });
+      if(r.error && r.error.code === 'PGRST202') r = await sb.rpc('album_add_photo', args);   // contributor.sql 을 아직 안 돌린 서버
+      must(r);
     },
     url: path => sb.storage.from('photos').getPublicUrl(path).data.publicUrl,
     portrait: path => path ? sb.storage.from('portraits').getPublicUrl(path).data.publicUrl : null,
@@ -236,25 +247,26 @@ function supabaseApi(sb){
 
 function demoApi(){
   // 데모용 가짜 이름. 실제 명단은 서버에만 둔다.
-  const roster = [
+  // config.js 의 DEMO_ROSTER / DEMO_ANSWERS / DEMO_PHOTOS 로 미리보기용 데이터를 바꿔 끼울 수 있다.
+  const roster = CFG.DEMO_ROSTER || [
     {id:'3-02-01', name:'예시 가', c3:2}, {id:'3-02-02', name:'예시 나', c3:2},
     {id:'3-01-01', name:'예시 다', c3:1}, {id:'3-05-01', name:'예시 라', c3:5}, {id:'3-05-02', name:'예시 마', c3:5},
   ];
-  const answers = [{person_id:'3-02-01', c2:3}, {person_id:'3-02-02', c2:3}];
+  const answers = CFG.DEMO_ANSWERS || [{person_id:'3-02-01', c2:3}, {person_id:'3-02-02', c2:3}];
   const teachers = [{id:'t-01', name:'예시 담임', role:'담임', grade:3, class:2}, {id:'t-02', name:'예시 교과', role:'교과', subject:'수학', grade:3}];
-  const photos = [], blobs = {};
+  const photos = (CFG.DEMO_PHOTOS || []).map((p, i) => ({ id:'demo-' + i, created_at:'', ...p })), blobs = {};
   return {
     async load(){ return { roster, answers:[...answers], photos:[...photos], teachers } },
     async setAnswer(id, row){ const i = answers.findIndex(a => a.person_id === id); const v = {person_id:id, c1:row.c1, c2:row.c2}; i < 0 ? answers.push(v) : answers[i] = v },
-    async addPhoto(blob, event, caption){ const id = String(Date.now() + Math.random()); blobs[id] = URL.createObjectURL(blob); photos.unshift({id, path:id, event, caption, created_at:new Date().toISOString()}) },
-    url: path => blobs[path],
+    async addPhoto(blob, event, caption, who){ const id = String(Date.now() + Math.random()); blobs[id] = URL.createObjectURL(blob); photos.unshift({id, path:id, event, caption, contributor: who || null, created_at:new Date().toISOString()}) },
+    url: path => blobs[path] || path,
     portrait: () => null,
   };
 }
 
 // ---------- 상태 ----------
 let roster = [], answers = {}, photos = [], teachers = [], loaded = false, loadErr = false;
-let grade = 3, klass = null, evFilter = '전체', openId = null;
+let grade = 3, klass = null, evFilter = '전체', whoFilter = '전체', openId = null;
 const cls = (p, g) => g === 3 ? p.c3 : (answers[p.id] || {})['c' + g] ?? null;
 const maxClass = () => Math.max(CFG.MAX_CLASS || 12, ...roster.map(p => p.c3 || 0));
 const ini = name => esc(String(name).replace(/^예시\s*/, '').slice(0, 1));
@@ -366,17 +378,40 @@ function openPerson(id){
 }
 function closePerson(){ $('pv').hidden = true; openId = null; renderAlbum() }
 
+// 사진첩은 먼저 "누구 사진첩"(사진 주인)으로 나눈다. 같은 행사라도 사진 주인마다 반이 달라 얼굴이 갈리기 때문.
+const NOBODY = '이름 없이 올린 사진';
+const whoOf = p => (p.contributor || '').trim() || NOBODY;
+// 사진 주인이 명단에 한 명만 있으면 그 사람의 반을 알려 준다 (동명이인이면 생략)
+function whoClasses(name){
+  const m = roster.filter(p => norm(p.name) === norm(name));
+  if(m.length !== 1) return '';
+  return GRADES.slice().reverse().map(g => { const c = cls(m[0], g); return c ? `${gName(g)} ${c}반` : '' }).filter(Boolean).join(' / ');
+}
 function renderPhotos(){
-  const counts = {}; photos.forEach(p => counts[p.event] = (counts[p.event]||0) + 1);
+  const byWho = {}; photos.forEach(p => byWho[whoOf(p)] = (byWho[whoOf(p)] || 0) + 1);
+  const whos = Object.keys(byWho).sort((a, b) => (a === NOBODY) - (b === NOBODY) || byWho[b] - byWho[a] || a.localeCompare(b, 'ko'));
+  if(whoFilter !== '전체' && !byWho[whoFilter]) whoFilter = '전체';
+  const split = whos.length > 1 || (whos.length === 1 && whos[0] !== NOBODY);   // 제공자가 적힌 사진이 있을 때만 나눠 보여 준다
+  $('whoLabel').hidden = !split;
+  $('whoPick').innerHTML = !split ? '' : ['전체', ...whos]
+    .map(w => `<button class="tab" data-w="${esc(w)}" aria-selected="${w === whoFilter}">${esc(w)} <small>${w === '전체' ? photos.length : byWho[w]}</small></button>`).join('');
+  const mine = photos.filter(p => whoFilter === '전체' || whoOf(p) === whoFilter);
+  const kc = whoFilter !== '전체' && whoFilter !== NOBODY ? whoClasses(whoFilter) : '';
+  $('whoHint').hidden = !kc;
+  $('whoHint').textContent = kc ? `${whoFilter} 동문의 반: ${kc}. 같은 반 친구들이 많이 나와요.` : '';
+  const counts = {}; mine.forEach(p => counts[p.event] = (counts[p.event]||0) + 1);
+  if(evFilter !== '전체' && !counts[evFilter]) evFilter = '전체';
   $('eventPick').innerHTML = ['전체', ...EVENTS].filter(e => e === '전체' || counts[e])
-    .map(e => `<button class="tab" data-e="${e}" aria-selected="${e===evFilter}">${e} <small>${e==='전체' ? photos.length : counts[e]}</small></button>`).join('');
-  const list = photos.filter(p => evFilter === '전체' || p.event === evFilter);
+    .map(e => `<button class="tab" data-e="${e}" aria-selected="${e===evFilter}">${e} <small>${e==='전체' ? mine.length : counts[e]}</small></button>`).join('');
+  const list = mine.filter(p => evFilter === '전체' || p.event === evFilter);
+  const showBy = split && whoFilter === '전체';
   $('photos').innerHTML = list.length ? list.map(p => `
     <figure class="ph">
       <button data-id="${esc(p.id)}" aria-label="크게 보기"><img src="${esc(api.url(p.path))}" alt="${esc(p.caption || p.event)}" loading="lazy"></button>
-      <figcaption><span>${esc(p.caption || '')}</span><span class="tag">${esc(p.event)}</span></figcaption>
+      <figcaption><span>${esc(p.caption || '')}${showBy && p.contributor ? `<span class="by">${esc(whoOf(p))} 제공</span>` : ''}</span><span class="tag">${esc(p.event)}</span></figcaption>
     </figure>`).join('')
     : '<div class="empty" style="grid-column:1/-1"><strong>아직 사진이 없어요</strong>수학여행, 졸업식 사진을 골라 "사진 올리기"를 누르세요.</div>';
+  $('whoList').innerHTML = [...new Set(roster.map(p => p.name))].map(n => `<option value="${esc(n)}">`).join('');
 }
 
 function show(view){
@@ -395,6 +430,9 @@ $('page').onclick = e => { const b = e.target.closest('.face[data-id]'); if(b) o
 $('pvClose').onclick = closePerson;
 $('pv').onclick = e => { if(e.target === $('pv')) closePerson() };
 $('eventPick').onclick = e => { const b = e.target.closest('[data-e]'); if(b){ evFilter = b.dataset.e; renderPhotos() } };
+$('whoPick').onclick = e => { const b = e.target.closest('[data-w]'); if(b){ whoFilter = b.dataset.w; evFilter = '전체'; renderPhotos() } };
+const WHO_KEY = 'mago-album-who';
+try{ $('upWho').value = localStorage.getItem(WHO_KEY) || '' }catch(e){}
 $('upEvent').innerHTML = EVENTS.map(e => `<option>${e}</option>`).join('');
 
 let saving = Promise.resolve();
@@ -421,7 +459,7 @@ $('lock').onclick = () => { savePw(''); roster = []; photos = []; teachers = [];
 $('photos').onclick = e => {
   const b = e.target.closest('button[data-id]'); if(!b) return;
   const p = photos.find(x => x.id === b.dataset.id); if(!p) return;
-  $('lbImg').src = api.url(p.path); $('lbCap').textContent = [p.event, p.caption].filter(Boolean).join(' · '); $('lb').hidden = false;
+  $('lbImg').src = api.url(p.path); $('lbCap').textContent = [p.event, p.caption, p.contributor ? whoOf(p) + ' 제공' : ''].filter(Boolean).join(' · '); $('lb').hidden = false;
 };
 $('lbClose').onclick = () => $('lb').hidden = true;
 $('lb').onclick = e => { if(e.target === $('lb')) $('lb').hidden = true };
@@ -440,16 +478,17 @@ async function shrink(file){
 $('upFile').onchange = async e => {
   const files = [...e.target.files]; e.target.value = '';
   if(!files.length) return;
-  const event = $('upEvent').value, caption = $('upCap').value.trim();
+  const event = $('upEvent').value, caption = $('upCap').value.trim(), who = $('upWho').value.trim();
+  try{ who ? localStorage.setItem(WHO_KEY, who) : localStorage.removeItem(WHO_KEY) }catch(err){}
   let ok = 0, fail = 0;
   for(const f of files){
     $('upMsg').textContent = `올리는 중… ${ok + fail + 1}/${files.length}`;
-    try{ await api.addPhoto(await shrink(f), event, caption); ok++ }
+    try{ await api.addPhoto(await shrink(f), event, caption, who); ok++ }
     catch(err){ console.error(err); fail++ }
   }
   $('upMsg').textContent = fail ? `${ok}장 올렸고 ${fail}장은 실패했어요. 사진 파일인지 확인해 주세요.` : `${ok}장 올렸어요.`;
   $('upCap').value = '';
-  evFilter = '전체'; await refresh();
+  evFilter = '전체'; whoFilter = who || '전체'; await refresh();
 };
 
 {

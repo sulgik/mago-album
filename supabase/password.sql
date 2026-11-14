@@ -32,7 +32,7 @@ begin
     'roster',   coalesce((select json_agg(r order by r.id) from (select id, name, c3, portrait from roster) r), '[]'::json),
     'answers',  coalesce((select json_agg(a) from (select person_id, c1, c2 from answers) a), '[]'::json),
     'teachers', coalesce((select json_agg(t order by t.id) from (select id, name, role, subject, grade, class, portrait from teachers) t), '[]'::json),
-    'photos',   coalesce((select json_agg(p order by p.created_at desc) from (select id, path, event, caption, created_at from photos where hidden = false) p), '[]'::json)
+    'photos',   coalesce((select json_agg(p order by p.created_at desc) from (select id, path, event, caption, contributor, created_at from photos where hidden = false) p), '[]'::json)
   );
 end $$;
 
@@ -46,12 +46,14 @@ begin
   on conflict (person_id) do update set c1 = excluded.c1, c2 = excluded.c2;
 end $$;
 
--- 사진첩에 사진 등록 (파일은 storage 에 먼저 올린 뒤)
-create or replace function album_add_photo(pw text, p_path text, p_event text, p_caption text) returns void
+-- 사진첩에 사진 등록 (파일은 storage 에 먼저 올린 뒤). 제공자 이름은 선택.
+drop function if exists album_add_photo(text, text, text, text);
+create or replace function album_add_photo(pw text, p_path text, p_event text, p_caption text, p_contributor text default null) returns void
 language plpgsql security definer set search_path = public, extensions as $$
 begin
   if not album_check(pw) then raise exception 'wrong password' using errcode = '28000'; end if;
-  insert into photos (path, event, caption) values (p_path, p_event, nullif(p_caption, ''));
+  insert into photos (path, event, caption, contributor)
+  values (p_path, p_event, nullif(p_caption, ''), nullif(btrim(p_contributor), ''));
 end $$;
 
 -- 사이트(anon)는 함수만 쓸 수 있고, 표는 직접 못 읽는다
@@ -64,7 +66,7 @@ drop policy if exists "photos insert"   on photos;
 drop policy if exists "teachers read"   on teachers;
 
 grant execute on function album_check(text), album_load(text),
-  album_set_answer(text, text, int, int), album_add_photo(text, text, text, text) to anon, authenticated;
+  album_set_answer(text, text, int, int), album_add_photo(text, text, text, text, text) to anon, authenticated;
 
 -- 사진 파일: 버킷 목록 조회는 정책이 없어 막혀 있고, 경로는 무작위라 추측할 수 없다.
 -- 경로는 비밀번호를 통과한 album_load 로만 알 수 있다.

@@ -44,6 +44,7 @@ create table if not exists photos (
   path       text not null,             -- storage 버킷 'photos' 안의 경로
   event      text not null check (event in ('수학여행','졸업식','수련회','체육대회','교실','기타')),
   caption    text check (char_length(caption) <= 200),
+  contributor text check (char_length(contributor) <= 40),   -- 사진 주인(제공자) 이름. 사진첩을 이 기준으로 나눈다
   hidden     boolean default false,     -- 운영진이 true 로 바꾸면 사이트에서 숨김
   created_at timestamptz default now()
 );
