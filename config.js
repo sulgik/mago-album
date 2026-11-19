@@ -5,7 +5,7 @@ window.ALBUM_CONFIG = {
   SUPABASE_URL: "https://ofewlxuhmdlwdfshgdhr.supabase.co",
   SUPABASE_ANON_KEY: "sb_publishable_qhB2fsugqAreLahFoAvgwg_HHqEdp0R",   // publishable(공개) 키
   SCHOOL: "마산고등학교",
-  CLASS_OF: "55기",      // 상단에 "마산고등학교 55기 동문회"로 표시
+  CLASS_OF: "55회",      // 상단에 "마산고등학교 55회 동문회"로 표시
   MAX_CLASS: 12,         // 반 선택 목록의 최대 반 수
   YEARS: { 1: 1993, 2: 1994, 3: 1995 }   // 학년별 연도
 };
