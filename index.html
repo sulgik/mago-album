@@ -105,6 +105,16 @@ h1{font-family:var(--display);font-size:30px;font-weight:700;margin:0;text-wrap:
 .lb{flex-direction:column;gap:10px}
 .lb img{max-height:80vh;border-radius:6px}
 .lb p{color:#eef1f8;margin:0;text-align:center}
+/* AI 복원본이 있는 사진: 원래 사진과 나란히. 좁은 화면에서는 위아래로 */
+.lb .pair{display:flex;gap:12px;align-items:flex-start;justify-content:center;max-width:100%}
+.lb .pair figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.lb .pair figcaption{color:#eef1f8;font-size:13px;text-align:center}
+.lb .pair figcaption small{display:block;color:#c9cfdc;font-size:11.5px}
+.lb.two{overflow-y:auto}
+.lb.two img{max-height:74vh;max-width:100%}
+@media (max-width:800px){ .lb.two{justify-content:flex-start} .lb .pair{flex-direction:column;align-items:center} .lb.two img{max-height:38vh} }
+.ph button{position:relative}
+.ph .ai{position:absolute;left:6px;bottom:6px;background:rgba(20,16,12,.72);color:#fff;font-size:11px;padding:2px 7px;border-radius:999px;pointer-events:none}
 footer{margin-top:40px;color:var(--sub);font-size:12px;line-height:1.7}
 /* 비밀번호 화면 */
 .gate{position:fixed;inset:0;background:var(--paper);z-index:30;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:max(24px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px))}
@@ -206,7 +216,7 @@ footer{margin-top:40px;color:var(--sub);font-size:12px;line-height:1.7}
     <button class="btn" id="pvClose">닫기</button>
   </div>
 </div>
-<div class="overlay lb" id="lb" hidden><img id="lbImg" alt=""><p id="lbCap"></p><button class="btn" id="lbClose">닫기</button></div>
+<div class="overlay lb" id="lb" hidden><div class="pair"><figure><img id="lbImg" alt=""><figcaption id="lbL1" hidden>원래 사진 <small>반듯하게 펴고 자른 것</small></figcaption></figure><figure id="lbAiBox" hidden><img id="lbAi" alt="AI 복원본"><figcaption>AI 복원 <small>AI가 새로 그린 것이라 얼굴이 실제와 달라요</small></figcaption></figure></div><p id="lbCap"></p><button class="btn" id="lbClose">닫기</button></div>
 
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -391,7 +401,7 @@ function renderAlbum(){
 }
 // 졸업앨범 책에서 옮긴 사진 한 장. 잘리지 않게 원래 비율로 보여 준다
 function bookFig(p, cap){
-  return `<figure class="ph"><button data-ph="${esc(p.id)}" aria-label="크게 보기"><img src="${esc(api.url(p.path))}" alt="${esc(p.caption || BOOK)}" loading="lazy"></button>${cap ? `<figcaption><span>${esc(cap)}</span></figcaption>` : ''}</figure>`;
+  return `<figure class="ph"><button data-ph="${esc(p.id)}" aria-label="크게 보기"><img src="${esc(api.url(p.path))}" alt="${esc(p.caption || BOOK)}" loading="lazy">${p.ai_path ? '<span class="ai">+ AI 복원</span>' : ''}</button>${cap ? `<figcaption><span>${esc(cap)}</span></figcaption>` : ''}</figure>`;
 }
 
 // 그 학년의 선생님: 학년이 정해진 분 + 학년 미정(전 학년) 교과 선생님
@@ -449,7 +459,7 @@ function renderPhotos(){
   const showBy = split && whoFilter === '전체';
   $('photos').innerHTML = list.length ? list.map(p => `
     <figure class="ph">
-      <button data-id="${esc(p.id)}" aria-label="크게 보기"><img src="${esc(api.url(p.path))}" alt="${esc(p.caption || p.event)}" loading="lazy"></button>
+      <button data-id="${esc(p.id)}" aria-label="크게 보기"><img src="${esc(api.url(p.path))}" alt="${esc(p.caption || p.event)}" loading="lazy">${p.ai_path ? '<span class="ai">+ AI 복원</span>' : ''}</button>
       <figcaption><span>${esc(p.caption || '')}${showBy && p.contributor ? `<span class="by">${esc(whoOf(p))} 제공</span>` : ''}</span><span class="tag">${esc(p.event)}</span></figcaption>
     </figure>`).join('')
     : '<div class="empty" style="grid-column:1/-1"><strong>아직 사진이 없어요</strong>수학여행, 졸업식 사진을 골라 "사진 올리기"를 누르세요.</div>';
@@ -500,6 +510,9 @@ $('lock').onclick = () => { savePw(''); roster = []; photos = []; teachers = [];
 
 function openPhoto(id){
   const p = photos.find(x => x.id === id); if(!p) return;
+  const two = !!p.ai_path;
+  $('lb').classList.toggle('two', two); $('lbL1').hidden = !two; $('lbAiBox').hidden = !two;
+  $('lbAi').src = two ? api.url(p.ai_path) : '';
   $('lbImg').src = api.url(p.path); $('lbCap').textContent = isBook(p) ? [BOOK, p.caption].filter(Boolean).join(' · ') : [p.event, p.caption, p.contributor ? whoOf(p) + ' 제공' : ''].filter(Boolean).join(' · '); $('lb').hidden = false;
 }
 $('photos').onclick = e => { const b = e.target.closest('button[data-id]'); if(b) openPhoto(b.dataset.id) };
