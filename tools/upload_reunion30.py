@@ -1,16 +1,15 @@
-"""졸업 30주년 기념행사 선별 사진(연사 중복 제거 37장)을 긴 변 2000px JPEG로 줄여
+"""졸업 30주년 기념행사 선별 사진(연사 중복 제거 42장)을 긴 변 2000px JPEG로 줄여
 Supabase Storage 'photos' 버킷에 올리고, photos 표 등록용 SQL(또는 RPC 호출)을 수행한다.
 
 사용법:
   1) Storage 업로드 + SQL 파일 생성 (비밀번호 불필요):
-     python3 tools/upload_reunion30.py --sql > supabase/reunion30_photos.sql
+     python3 tools/upload_reunion30.py > supabase/reunion30.sql
      (생성된 SQL을 Supabase SQL Editor에서 실행하면 sort_order까지 한 번에 반영됨)
 
-  2) 비밀번호로 RPC(album_add_photo)까지 바로 호출 (서버에 reunion30.sql 적용 후):
-     ALBUM_PW="동문회비밀번호" python3 tools/upload_reunion30.py --rpc
+  2) 신규 추가분만 Storage 업로드:
+     python3 tools/upload_reunion30.py --only-new > supabase/reunion30.sql
 """
 import argparse
-import glob
 import io
 import json
 import os
@@ -32,50 +31,54 @@ DEFAULT_SRC_DIR = "/Users/sulgik/Downloads/졸업30주년_선별/사진"
 STORAGE_PREFIX = "reunion30"
 EVENT_NAME = "졸업 30주년"
 
-# (파일 정렬 순번 1-based, sort_order, caption)
-# 69장 중 1~3초 간격 중복 연사를 추리고 행사 시간순 + 대표 단체사진 맨 앞 배치로 큐레이션한 37장
+# (storage_filename, source_filename, sort_order, caption)
 CURATED = [
     # 대표 단체사진 (Hero: 갤러리 맨 위 전체 폭)
-    (24, 10, "마산고 55회 졸업 30주년 기념행사 단체사진"),
+    ("reunion30-01-s10.jpg", "1795326227179.jpg", 10, "마산고 55회 졸업 30주년 기념행사 단체사진"),
     # 1부 기념식·만찬
-    (65, 20, "1부 기념식 · 행사장 전경"),
-    (67, 21, "1부 기념식 · 포토월"),
-    (66, 22, "1부 기념식 · 축하 화환과 학년도기"),
-    (68, 23, "1부 기념식 · 포토월 기념촬영"),
-    (69, 24, "1부 기념식 · 반가운 얼굴들"),
-    (2,  30, "1부 기념식 · 시상 및 선물 전달"),
-    (4,  31, "1부 기념식 · 시상 및 선물 전달"),
-    (6,  32, "1부 기념식 · 시상 및 선물 전달"),
-    (7,  33, "1부 기념식 · 시상 및 선물 전달"),
-    (8,  34, "1부 기념식 · 시상 및 선물 전달"),
-    (10, 35, "1부 기념식 · 시상 및 선물 전달"),
-    (11, 36, "1부 기념식 · 시상 및 선물 전달"),
-    (13, 37, "1부 기념식 · 시상 및 선물 전달"),
-    (17, 40, "1부 기념식 · 만찬장 풍경"),
-    (44, 41, "1부 기념식 · 건배"),
-    (45, 42, "1부 기념식 · 기념품과 함께"),
+    ("reunion30-02-s20.jpg", "KakaoTalk_Photo_2026-11-22-19-32-07 001.jpeg", 20, "1부 기념식 · 행사장 전경"),
+    ("reunion30-03-s21.jpg", "KakaoTalk_Photo_2026-11-22-19-32-08 003.jpeg", 21, "1부 기념식 · 포토월"),
+    ("reunion30-04-s22.jpg", "KakaoTalk_Photo_2026-11-22-19-32-07 002.jpeg", 22, "1부 기념식 · 축하 화환과 학년도기"),
+    ("reunion30-05-s23.jpg", "KakaoTalk_Photo_2026-11-22-19-32-08 004.jpeg", 23, "1부 기념식 · 포토월 기념촬영"),
+    ("reunion30-06-s24.jpg", "KakaoTalk_Photo_2026-11-22-19-32-51.jpeg", 24, "1부 기념식 · 반가운 얼굴들"),
+    ("reunion30-38-s25.jpg", "IMG_2326.jpeg", 25, "1부 기념식 · 기념촬영"),
+    ("reunion30-07-s30.jpg", "1795326220153.jpg", 30, "1부 기념식 · 시상 및 선물 전달"),
+    ("reunion30-08-s31.jpg", "1795326220355.jpg", 31, "1부 기념식 · 시상 및 선물 전달"),
+    ("reunion30-09-s32.jpg", "1795326220558.jpg", 32, "1부 기념식 · 시상 및 선물 전달"),
+    ("reunion30-10-s33.jpg", "1795326220662.jpg", 33, "1부 기념식 · 시상 및 선물 전달"),
+    ("reunion30-11-s34.jpg", "1795326221065.jpg", 34, "1부 기념식 · 시상 및 선물 전달"),
+    ("reunion30-12-s35.jpg", "1795326221266.jpg", 35, "1부 기념식 · 시상 및 선물 전달"),
+    ("reunion30-13-s36.jpg", "1795326221364.jpg", 36, "1부 기념식 · 시상 및 선물 전달"),
+    ("reunion30-14-s37.jpg", "1795326221557.jpg", 37, "1부 기념식 · 시상 및 선물 전달"),
+    ("reunion30-15-s40.jpg", "1795326226662.jpg", 40, "1부 기념식 · 만찬장 풍경"),
+    ("reunion30-16-s41.jpg", "1795326229240.jpg", 41, "1부 기념식 · 건배"),
+    ("reunion30-17-s42.jpg", "1795326234856.jpg", 42, "1부 기념식 · 기념품과 함께"),
     # 축하공연·무대
-    (18, 50, "축하공연 · 무대 공연"),
-    (19, 51, "축하공연 · 무대 공연"),
-    (27, 52, "축하공연 · 피날레"),
-    (28, 53, "축하공연 · 무대 앞 동문 환호"),
-    (31, 54, "축하공연 · 동문 댄스 무대"),
-    (34, 55, "축하공연 · 무대 앞 떼창과 호응"),
-    (38, 56, "축하공연 · 무대 앞 호흡"),
-    (41, 57, "축하공연 · 무대 인사"),
-    (64, 58, "축하공연 · 테이블 앞 깜짝 무대"),
+    ("reunion30-18-s50.jpg", "1795326226702.jpg", 50, "축하공연 · 무대 공연"),
+    ("reunion30-19-s51.jpg", "1795326226770.jpg", 51, "축하공연 · 무대 공연"),
+    ("reunion30-20-s52.jpg", "1795326227551.jpg", 52, "축하공연 · 피날레"),
+    ("reunion30-21-s53.jpg", "1795326227644.jpg", 53, "축하공연 · 무대 앞 동문 환호"),
+    ("reunion30-22-s54.jpg", "1795326227956.jpg", 54, "축하공연 · 동문 댄스 무대"),
+    ("reunion30-23-s55.jpg", "1795326228242.jpg", 55, "축하공연 · 무대 앞 떼창과 호응"),
+    ("reunion30-24-s56.jpg", "1795326228647.jpg", 56, "축하공연 · 무대 앞 호흡"),
+    ("reunion30-25-s57.jpg", "1795326228942.jpg", 57, "축하공연 · 무대 인사"),
+    ("reunion30-26-s58.jpg", "KakaoTalk_Photo_2026-11-22-19-29-10.jpeg", 58, "축하공연 · 테이블 앞 깜짝 무대"),
     # 2차 뒤풀이
-    (46, 70, "2차 뒤풀이 · 호프집 전경"),
-    (47, 71, "2차 뒤풀이 · 테이블 인사"),
-    (49, 72, "2차 뒤풀이 · 반가운 담소"),
-    (50, 73, "2차 뒤풀이 · 테이블 정담"),
-    (52, 74, "2차 뒤풀이 · 테이블 기념촬영"),
-    (63, 75, "2차 뒤풀이 · 진한 우정"),
-    (53, 80, "2차 뒤풀이 · 마무리 인사"),
-    (54, 81, "2차 뒤풀이 · 아쉬운 작별"),
-    (57, 82, "2차 뒤풀이 · 다음을 기약하며"),
-    (58, 83, "2차 뒤풀이 · 엘리베이터 배웅"),
-    (61, 84, "2차 뒤풀이 · 귀가길 브이"),
+    ("reunion30-27-s70.jpg", "1795326234943.jpg", 70, "2차 뒤풀이 · 호프집 전경"),
+    ("reunion30-28-s71.jpg", "1795326234974.jpg", 71, "2차 뒤풀이 · 테이블 인사"),
+    ("reunion30-39-s71.jpg", "IMG_2333.jpeg", 71, "2차 뒤풀이 · 테이블 정담"),
+    ("reunion30-29-s72.jpg", "1795326235050.jpg", 72, "2차 뒤풀이 · 반가운 담소"),
+    ("reunion30-30-s73.jpg", "1795326235079.jpg", 73, "2차 뒤풀이 · 테이블 정담"),
+    ("reunion30-31-s74.jpg", "1795326235138.jpg", 74, "2차 뒤풀이 · 테이블 기념촬영"),
+    ("reunion30-32-s75.jpg", "KakaoTalk_Photo_2026-11-22-19-28-57.jpeg", 75, "2차 뒤풀이 · 진한 우정"),
+    ("reunion30-40-s76.jpg", "IMG_2336.jpeg", 76, "2차 뒤풀이 · 어깨동무"),
+    ("reunion30-41-s77.jpg", "IMG_2339.jpeg", 77, "2차 뒤풀이 · 반가운 친구들"),
+    ("reunion30-42-s78.jpg", "IMG_2340.jpeg", 78, "2차 뒤풀이 · 손하트"),
+    ("reunion30-33-s80.jpg", "1795326235171.jpg", 80, "2차 뒤풀이 · 마무리 인사"),
+    ("reunion30-34-s81.jpg", "1795326235214.jpg", 81, "2차 뒤풀이 · 아쉬운 작별"),
+    ("reunion30-35-s82.jpg", "1795326235379.jpg", 82, "2차 뒤풀이 · 다음을 기약하며"),
+    ("reunion30-36-s83.jpg", "1795326235425.jpg", 83, "2차 뒤풀이 · 엘리베이터 배웅"),
+    ("reunion30-37-s84.jpg", "1795326235549.jpg", 84, "2차 뒤풀이 · 귀가길 브이"),
 ]
 
 
@@ -109,32 +112,9 @@ def upload_to_storage(storage_path: str, data: bytes) -> None:
             resp.read()
     except urllib.error.HTTPError as e:
         body = e.read().decode("utf-8", errors="replace")
-        if e.code == 400 and "Duplicate" in body:
+        if e.code == 400 and ("Duplicate" in body or "already exists" in body):
             return
         raise RuntimeError(f"Storage upload failed ({e.code}) for {storage_path}: {body}") from e
-
-
-def rpc_add_photo(pw: str, storage_path: str, event: str, caption: str) -> None:
-    url = f"{SUPABASE_URL}/rest/v1/rpc/album_add_photo"
-    payload = json.dumps({
-        "pw": pw,
-        "p_path": storage_path,
-        "p_event": event,
-        "p_caption": caption,
-        "p_contributor": "",
-    }).encode("utf-8")
-    req = urllib.request.Request(
-        url,
-        data=payload,
-        method="POST",
-        headers={
-            "apikey": SUPABASE_ANON_KEY,
-            "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
-            "Content-Type": "application/json",
-        },
-    )
-    with urllib.request.urlopen(req, timeout=20, context=SSL_CTX) as resp:
-        resp.read()
 
 
 def q(s: str) -> str:
@@ -145,33 +125,22 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--src", default=DEFAULT_SRC_DIR, help="원본 사진 폴더 경로")
     ap.add_argument("--no-upload", action="store_true", help="Storage 업로드 건너뛰고 SQL만 출력")
-    ap.add_argument("--rpc", action="store_true", help="ALBUM_PW 환경변수로 album_add_photo RPC 호출")
+    ap.add_argument("--only-new", action="store_true", help="신규 추가된 IMG_23*.jpeg 파일만 Storage에 업로드")
     args = ap.parse_args()
 
-    files = sorted(glob.glob(os.path.join(args.src, "*")))
-    if len(files) < 69:
-        raise SystemExit(f"Expected 69 files in {args.src}, found {len(files)}")
-
     rows = []
-    for seq, (idx, sort_order, caption) in enumerate(CURATED, start=1):
-        src_file = files[idx - 1]
-        storage_path = f"{STORAGE_PREFIX}/reunion30-{seq:02d}-s{sort_order:02d}.jpg"
-        if not args.no_upload:
+    for seq, (storage_name, src_name, sort_order, caption) in enumerate(CURATED, start=1):
+        src_file = os.path.join(args.src, src_name)
+        if not os.path.exists(src_file):
+            raise SystemExit(f"Missing file: {src_file}")
+        storage_path = f"{STORAGE_PREFIX}/{storage_name}"
+        if not args.no_upload and (not args.only_new or src_name.startswith("IMG_23")):
             jpg = shrink_image(src_file)
             upload_to_storage(storage_path, jpg)
-            print(f"[{seq:02d}/{len(CURATED)}] uploaded {storage_path} ({len(jpg)//1024} KB) <- {os.path.basename(src_file)}", file=sys.stderr)
+            print(f"[{seq:02d}/{len(CURATED)}] uploaded {storage_path} ({len(jpg)//1024} KB) <- {src_name}", file=sys.stderr)
         rows.append((storage_path, EVENT_NAME, caption, sort_order))
 
-    if args.rpc:
-        pw = os.environ.get("ALBUM_PW", "").strip()
-        if not pw:
-            raise SystemExit("ALBUM_PW 환경변수가 필요합니다.")
-        for storage_path, event, caption, _ in rows:
-            rpc_add_photo(pw, storage_path, event, caption)
-        print(f"RPC로 {len(rows)}장 등록 완료.", file=sys.stderr)
-
-    # SQL 출력 (reunion30.sql 스키마 변경 + photos insert 한 번에 실행 가능)
-    print("-- 마산고 55회 졸업 30주년 기념행사 사진첩 일괄 등록 (37장)")
+    print(f"-- 마산고 55회 졸업 30주년 기념행사 사진첩 일괄 등록 ({len(rows)}장)")
     print("-- Supabase SQL Editor 에 붙여 넣고 Run. 다시 실행해도 중복 등록되지 않는다.\n")
     print("alter table photos drop constraint if exists photos_event_check;")
     print("alter table photos add constraint photos_event_check check (event in ('수학여행','졸업식','수련회','체육대회','교실','졸업앨범','졸업 30주년','기타'));\n")

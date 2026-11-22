@@ -1,4 +1,4 @@
--- 마산고 55회 졸업 30주년 기념행사 사진첩 일괄 등록 (37장)
+-- 마산고 55회 졸업 30주년 기념행사 사진첩 일괄 등록 (42장)
 -- Supabase SQL Editor 에 붙여 넣고 Run. 다시 실행해도 중복 등록되지 않는다.
 
 alter table photos drop constraint if exists photos_event_check;
@@ -25,6 +25,7 @@ insert into photos (path, event, caption, sort_order) values
   ('reunion30/reunion30-04-s22.jpg', '졸업 30주년', '1부 기념식 · 축하 화환과 학년도기', 22),
   ('reunion30/reunion30-05-s23.jpg', '졸업 30주년', '1부 기념식 · 포토월 기념촬영', 23),
   ('reunion30/reunion30-06-s24.jpg', '졸업 30주년', '1부 기념식 · 반가운 얼굴들', 24),
+  ('reunion30/reunion30-38-s25.jpg', '졸업 30주년', '1부 기념식 · 기념촬영', 25),
   ('reunion30/reunion30-07-s30.jpg', '졸업 30주년', '1부 기념식 · 시상 및 선물 전달', 30),
   ('reunion30/reunion30-08-s31.jpg', '졸업 30주년', '1부 기념식 · 시상 및 선물 전달', 31),
   ('reunion30/reunion30-09-s32.jpg', '졸업 30주년', '1부 기념식 · 시상 및 선물 전달', 32),
@@ -47,10 +48,14 @@ insert into photos (path, event, caption, sort_order) values
   ('reunion30/reunion30-26-s58.jpg', '졸업 30주년', '축하공연 · 테이블 앞 깜짝 무대', 58),
   ('reunion30/reunion30-27-s70.jpg', '졸업 30주년', '2차 뒤풀이 · 호프집 전경', 70),
   ('reunion30/reunion30-28-s71.jpg', '졸업 30주년', '2차 뒤풀이 · 테이블 인사', 71),
+  ('reunion30/reunion30-39-s71.jpg', '졸업 30주년', '2차 뒤풀이 · 테이블 정담', 71),
   ('reunion30/reunion30-29-s72.jpg', '졸업 30주년', '2차 뒤풀이 · 반가운 담소', 72),
   ('reunion30/reunion30-30-s73.jpg', '졸업 30주년', '2차 뒤풀이 · 테이블 정담', 73),
   ('reunion30/reunion30-31-s74.jpg', '졸업 30주년', '2차 뒤풀이 · 테이블 기념촬영', 74),
   ('reunion30/reunion30-32-s75.jpg', '졸업 30주년', '2차 뒤풀이 · 진한 우정', 75),
+  ('reunion30/reunion30-40-s76.jpg', '졸업 30주년', '2차 뒤풀이 · 어깨동무', 76),
+  ('reunion30/reunion30-41-s77.jpg', '졸업 30주년', '2차 뒤풀이 · 반가운 친구들', 77),
+  ('reunion30/reunion30-42-s78.jpg', '졸업 30주년', '2차 뒤풀이 · 손하트', 78),
   ('reunion30/reunion30-33-s80.jpg', '졸업 30주년', '2차 뒤풀이 · 마무리 인사', 80),
   ('reunion30/reunion30-34-s81.jpg', '졸업 30주년', '2차 뒤풀이 · 아쉬운 작별', 81),
   ('reunion30/reunion30-35-s82.jpg', '졸업 30주년', '2차 뒤풀이 · 다음을 기약하며', 82),
