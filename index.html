@@ -276,7 +276,8 @@ function supabaseApi(sb){
       must(r);
     },
     url: path => sb.storage.from('photos').getPublicUrl(path).data.publicUrl,
-    portrait: path => path ? sb.storage.from('portraits').getPublicUrl(path).data.publicUrl : null,
+    // 'photos:…' 로 시작하면 photos 버킷, 아니면 portraits 버킷 (2026-11 총동창회 PDF 사진은 photos 버킷에 있다)
+    portrait: path => !path ? null : path.startsWith('photos:') ? sb.storage.from('photos').getPublicUrl(path.slice(7)).data.publicUrl : sb.storage.from('portraits').getPublicUrl(path).data.publicUrl,
   };
 }
 
