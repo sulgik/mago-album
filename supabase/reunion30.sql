@@ -1,4 +1,4 @@
--- 마산고 55회 졸업 30주년 기념행사 사진첩 일괄 등록 (42장)
+-- 마산고 55회 졸업 30주년 기념행사 사진첩 일괄 등록 (41장)
 -- Supabase SQL Editor 에 붙여 넣고 Run. 다시 실행해도 중복 등록되지 않는다.
 
 alter table photos drop constraint if exists photos_event_check;
@@ -59,7 +59,6 @@ insert into photos (path, event, caption, sort_order) values
   ('reunion30/reunion30-33-s80.jpg', '졸업 30주년', '2차 뒤풀이 · 마무리 인사', 80),
   ('reunion30/reunion30-34-s81.jpg', '졸업 30주년', '2차 뒤풀이 · 아쉬운 작별', 81),
   ('reunion30/reunion30-35-s82.jpg', '졸업 30주년', '2차 뒤풀이 · 다음을 기약하며', 82),
-  ('reunion30/reunion30-36-s83.jpg', '졸업 30주년', '2차 뒤풀이 · 엘리베이터 배웅', 83),
-  ('reunion30/reunion30-37-s84.jpg', '졸업 30주년', '2차 뒤풀이 · 귀가길 브이', 84);
+  ('reunion30/reunion30-36-s83.jpg', '졸업 30주년', '2차 뒤풀이 · 엘리베이터 배웅', 83);
 
 notify pgrst, 'reload schema';
