@@ -154,7 +154,8 @@ footer{margin-top:40px;color:var(--sub);font-size:12px;line-height:1.7}
 
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" id="t-album" aria-selected="true">졸업앨범</button>
-    <button class="tab" role="tab" id="t-photo" aria-selected="false">사진첩</button>
+    <button class="tab" role="tab" id="t-reunion" aria-selected="false">졸업 30주년</button>
+    <button class="tab" role="tab" id="t-photo" aria-selected="false">학창시절 사진첩</button>
   </div>
 
   <section id="v-album">
@@ -166,6 +167,11 @@ footer{margin-top:40px;color:var(--sub);font-size:12px;line-height:1.7}
     <div class="chips" id="classPick"></div>
     <p class="hint" id="albumHint"></p>
     <div class="page" id="page"></div>
+  </section>
+
+  <section id="v-reunion" hidden>
+    <p class="hint" id="reunionHint">2026년 11월 21일 마산고 55회 졸업 30주년 기념행사 사진첩이에요. 사진을 누르면 크게 보고 좌우(← →)로 넘겨 볼 수 있어요.</p>
+    <div class="photos" id="reunionPhotos"></div>
   </section>
 
   <section id="v-photo" hidden>
@@ -236,11 +242,13 @@ const evRank = e => { const i = EVENTS.indexOf(e); return i < 0 ? EVENTS.length 
 const byAlbumOrder = (a, b) => evRank(a.event) - evRank(b.event) || (a.sort_order ?? 1e9) - (b.sort_order ?? 1e9) || String(a.created_at).localeCompare(String(b.created_at));
 // 졸업앨범 책에서 옮긴 사진(행사 '졸업앨범')은 사진첩이 아니라 졸업앨범 탭의 3학년 반별 화면에 나온다.
 // 어느 반인지는 설명 맨 앞의 "3학년 N반"으로 읽는다. 반이 안 적힌 사진(대의원 등)은 "그 밖의 사진"에 모인다.
-const BOOK = '졸업앨범';
+const BOOK = '졸업앨범', REUNION = '졸업 30주년';
 const isBook = p => p.event === BOOK;
+const isReunion = p => p.event === REUNION;
 const bookClass = p => { const m = /^\s*3학년\s*(\d+)\s*반/.exec(p.caption || ''); return m ? +m[1] : null };
 const bookCap = p => (p.caption || '').replace(/^\s*3학년\s*\d+\s*반\s*/, '');
-const shelf = () => photos.filter(p => !isBook(p));   // 사진첩에 나오는 사진
+const reunionPhotos = () => photos.filter(isReunion);
+const shelf = () => photos.filter(p => !isBook(p) && !isReunion(p));   // 학창시절 사진첩에 나오는 사진
 // 학년을 아는 사진첩 사진은 사진 주인(제공자)의 그 학년 반 화면에도 함께 나온다. 같은 반 친구들이 많이 찍혀 있기 때문.
 // 학년은 사진의 grade 칸, 없으면 행사로 정한다(수학여행 = 2학년).
 const EVENT_GRADE = CFG.EVENT_GRADE || { '수학여행': 2 };
@@ -329,7 +337,7 @@ async function refresh(){
     if(isWrongPw(e)){ savePw(''); roster = []; photos = []; teachers = []; showGate(PW === '' ? '비밀번호가 맞지 않아요. 단톡방에서 다시 확인해 주세요.' : ''); return }
     loadErr = true; loaded = true;
   }
-  renderStats(); renderPhotos();
+  renderStats(); renderReunion(); renderPhotos();
   if(!openId) renderAlbum();   // 개인 카드를 보는 중이면 뒤 화면은 그대로 둔다
 }
 
@@ -337,11 +345,13 @@ async function refresh(){
 function renderStats(){
   const tag = DEMO ? ' <span class="demo">데모 · 예시 데이터</span>' : '';
   if(loadErr){ $('stats').innerHTML = '앨범을 불러오지 못했어요. 잠시 뒤 새로고침해 주세요.' + tag; return }
-  const n = roster.length;
+  const n = roster.length, rCnt = reunionPhotos().length, sCnt = shelf().length;
+  $('t-reunion').innerHTML = rCnt ? `졸업 30주년 <small>${rCnt}</small>` : '졸업 30주년';
+  $('t-photo').innerHTML = sCnt ? `학창시절 사진첩 <small>${sCnt}</small>` : '학창시절 사진첩';
   if(!n){ $('stats').innerHTML = '졸업앨범을 준비하고 있어요.' + tag; return }
   const withPic = roster.filter(p => p.portrait).length;
   const f1 = roster.filter(p => cls(p,1)).length, f2 = roster.filter(p => cls(p,2)).length;
-  $('stats').innerHTML = `<span>졸업생 <b>${n}</b>명</span><span>개인 사진 <b>${withPic}</b>/${n}</span><span>1학년 반 <b>${f1}</b>/${n}</span><span>2학년 반 <b>${f2}</b>/${n}</span><span>사진첩 <b>${shelf().length}</b>장</span>${tag}`;
+  $('stats').innerHTML = `<span>졸업생 <b>${n}</b>명</span><span>개인 사진 <b>${withPic}</b>/${n}</span><span>1학년 반 <b>${f1}</b>/${n}</span><span>2학년 반 <b>${f2}</b>/${n}</span><span>30주년 <b>${rCnt}</b>장</span><span>학창시절 <b>${sCnt}</b>장</span>${tag}`;
 }
 
 function groups(){
@@ -462,7 +472,7 @@ function renderPhotos(){
   $('whoHint').textContent = kc ? `${whoFilter} 동문의 반: ${kc}. 같은 반 친구들이 많이 나와요.` : '';
   const counts = {}; mine.forEach(p => counts[p.event] = (counts[p.event]||0) + 1);
   if(evFilter !== '전체' && !counts[evFilter]) evFilter = '전체';
-  $('eventPick').innerHTML = ['전체', ...EVENTS].filter(e => e === '전체' || counts[e])
+  $('eventPick').innerHTML = ['전체', ...EVENTS].filter(e => e === '전체' || (e !== REUNION && counts[e]))
     .map(e => `<button class="tab" data-e="${e}" aria-selected="${e===evFilter}">${e} <small>${e==='전체' ? mine.length : counts[e]}</small></button>`).join('');
   const list = mine.filter(p => evFilter === '전체' || p.event === evFilter);
   const showBy = split && whoFilter === '전체';
@@ -483,12 +493,41 @@ function renderPhotos(){
   $('whoList').innerHTML = [...new Set(roster.map(p => p.name))].map(n => `<option value="${esc(n)}">`).join('');
 }
 
-function show(view){
-  ['album','photo'].forEach(v => { $('t-' + v).setAttribute('aria-selected', v === view); $('v-' + v).hidden = v !== view });
+function renderReunion(){
+  const list = reunionPhotos();
+  const secOf = p => { const m = /^([^·]{1,20}?)\s*·\s*(.+)$/.exec(p.caption || ''); return m ? [m[1].trim(), m[2].trim()] : ['', p.caption || ''] };
+  const secCounts = {}; list.forEach(p => { const [s] = secOf(p); if(s) secCounts[s] = (secCounts[s] || 0) + 1 });
+  let curSec = '';
+  $('reunionPhotos').innerHTML = list.length ? list.map(p => {
+    const [sec, restCap] = secOf(p);
+    const head = sec && sec !== curSec ? (curSec = sec, `<h3 class="ph-sec">${esc(sec)} <span>${secCounts[sec]}장</span></h3>`) : '';
+    const hero = /단체사진/.test(p.caption || '') ? ' hero' : '';
+    return `${head}<figure class="ph${hero}">
+      <button data-id="${esc(p.id)}" aria-label="크게 보기"><img src="${esc(api.url(p.path))}" alt="${esc(p.caption || p.event)}" loading="lazy">${p.ai_path ? '<span class="ai">+ AI 복원</span>' : ''}</button>
+      <figcaption><span>${esc(restCap)}</span><span class="tag">${esc(sec || p.event)}</span></figcaption>
+    </figure>`;
+  }).join('')
+    : '<div class="empty" style="grid-column:1/-1"><strong>졸업 30주년 사진을 불러오는 중이에요</strong>잠시만 기다려 주세요.</div>';
+}
+
+function show(view, pushHash = false){
+  ['album','reunion','photo'].forEach(v => { $('t-' + v).setAttribute('aria-selected', v === view); $('v-' + v).hidden = v !== view });
+  if(pushHash){
+    const h = view === 'reunion' ? '#30' : view === 'photo' ? '#photo' : '';
+    if(location.hash !== h) history.replaceState(null, '', h || location.pathname + location.search);
+  }
+}
+function syncViewFromUrl(){
+  const h = decodeURIComponent(location.hash || '').replace(/^#/, '').trim();
+  const qv = new URLSearchParams(location.search).get('v') || '';
+  const tok = (h || qv).toLowerCase();
+  if(tok === '30' || tok === 'reunion' || tok === '30주년' || /^30\./.test(location.hostname)) show('reunion');
+  else if(tok === 'photo' || tok === '사진첩') show('photo');
 }
 
 // ---------- 동작 ----------
-['album','photo'].forEach(v => $('t-' + v).onclick = () => show(v));
+['album','reunion','photo'].forEach(v => $('t-' + v).onclick = () => show(v, true));
+window.addEventListener('hashchange', syncViewFromUrl);
 $('gradePick').onclick = e => { const b = e.target.closest('[data-g]'); if(b){ grade = +b.dataset.g; klass = null; clearSearch(false); renderAlbum() } };
 function clearSearch(render = true){ q = ''; $('q').value = ''; if(render) renderAlbum() }
 $('q').addEventListener('input', () => { q = $('q').value; renderAlbum() });
@@ -541,6 +580,7 @@ function openPhoto(id, pool){
   $('lb').hidden = false;
 }
 function stepPhoto(d){ if(lbList.length > 1 && !$('lb').hidden) openPhoto(lbList[(lbIdx + d + lbList.length) % lbList.length].id, lbList) }
+$('reunionPhotos').onclick = e => { const b = e.target.closest('button[data-id]'); if(b) openPhoto(b.dataset.id, reunionPhotos()) };
 $('photos').onclick = e => { const b = e.target.closest('button[data-id]'); if(b) openPhoto(b.dataset.id, shelf().filter(x => (whoFilter === '전체' || whoOf(x) === whoFilter) && (evFilter === '전체' || x.event === evFilter))) };
 $('lbPrev').onclick = () => stepPhoto(-1);
 $('lbNext').onclick = () => stepPhoto(1);
@@ -575,6 +615,7 @@ $('upFile').onchange = async e => {
   }
   $('upMsg').textContent = fail ? `${ok}장 올렸고 ${fail}장은 실패했어요. 사진 파일인지 확인해 주세요.` : `${ok}장 올렸어요.`;
   $('upCap').value = '';
+  if(event === REUNION){ show('reunion', true); await refresh(); return }
   evFilter = '전체'; whoFilter = who || '전체'; await refresh();
 };
 
@@ -584,7 +625,8 @@ $('upFile').onchange = async e => {
   $('school').textContent = [CFG.SCHOOL || '마산고등학교', span].filter(Boolean).join(' · ');
   if(CFG.CLASS_OF){ $('title').textContent = `${CFG.CLASS_OF} 졸업앨범`; document.title = `마산고 ${CFG.CLASS_OF} 졸업앨범` }
 }
-renderAlbum(); renderPhotos();
+syncViewFromUrl();
+renderAlbum(); renderReunion(); renderPhotos();
 refresh();
 // 다른 동문이 입력한 내용을 반영: 탭으로 돌아올 때 + 1분마다
 document.addEventListener('visibilitychange', () => { if(!document.hidden) refresh() });
