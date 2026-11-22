@@ -83,6 +83,12 @@ h1{font-family:var(--display);font-size:30px;font-weight:700;margin:0;text-wrap:
 .classpic .ph button,.photos.book .ph button{aspect-ratio:auto}
 .classpic .ph img,.photos.book .ph img{height:auto}
 .photos.book{align-items:start}
+.ph.hero{grid-column:1/-1;max-width:680px;margin:2px 0 6px}
+.ph.hero button{aspect-ratio:auto}
+.ph.hero img{height:auto}
+.ph-sec{grid-column:1/-1;font-family:var(--display);font-size:18px;margin:14px 0 2px;padding-top:14px;border-top:1px dashed var(--line);display:flex;align-items:baseline;gap:8px}
+.ph-sec:first-child,.ph.hero+.ph-sec{margin-top:4px;padding-top:4px;border-top:0}
+.ph-sec span{font-family:var(--body);font-size:13px;color:var(--sub);font-weight:400}
 .page h3{font-family:var(--display);font-size:18px;margin:22px 0 4px;padding-top:16px;border-top:1px dashed var(--line);display:flex;align-items:baseline;gap:8px}
 .page h3 span{font-family:var(--body);font-size:13px;color:var(--sub);font-weight:400}
 .picklabel{font-size:12px;color:var(--sub);margin:10px 0 4px}
@@ -105,6 +111,8 @@ h1{font-family:var(--display);font-size:30px;font-weight:700;margin:0;text-wrap:
 .lb{flex-direction:column;gap:10px}
 .lb img{max-height:80vh;border-radius:6px}
 .lb p{color:#eef1f8;margin:0;text-align:center}
+.lb-bar{display:flex;gap:8px;align-items:center}
+.lb-cnt{color:#c9cfdc;font-size:12px;font-variant-numeric:tabular-nums;min-width:44px;text-align:center}
 /* AI 복원본이 있는 사진: 원래 사진과 나란히. 좁은 화면에서는 위아래로 */
 .lb .pair{display:flex;gap:12px;align-items:flex-start;justify-content:center;max-width:100%}
 .lb .pair figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
@@ -216,13 +224,13 @@ footer{margin-top:40px;color:var(--sub);font-size:12px;line-height:1.7}
     <button class="btn" id="pvClose">닫기</button>
   </div>
 </div>
-<div class="overlay lb" id="lb" hidden><div class="pair"><figure><img id="lbImg" alt=""><figcaption id="lbL1" hidden>원래 사진 <small>반듯하게 펴고 자른 것</small></figcaption></figure><figure id="lbAiBox" hidden><img id="lbAi" alt="AI 복원본"><figcaption>AI 복원 <small>AI가 새로 그린 것이라 얼굴이 실제와 달라요</small></figcaption></figure></div><p id="lbCap"></p><button class="btn" id="lbClose">닫기</button></div>
+<div class="overlay lb" id="lb" hidden><div class="pair"><figure><img id="lbImg" alt=""><figcaption id="lbL1" hidden>원래 사진 <small>반듯하게 펴고 자른 것</small></figcaption></figure><figure id="lbAiBox" hidden><img id="lbAi" alt="AI 복원본"><figcaption>AI 복원 <small>AI가 새로 그린 것이라 얼굴이 실제와 달라요</small></figcaption></figure></div><p id="lbCap"></p><div class="lb-bar"><button class="btn" id="lbPrev" aria-label="이전 사진">← 이전</button><span class="lb-cnt" id="lbCnt"></span><button class="btn" id="lbClose">닫기</button><button class="btn" id="lbNext" aria-label="다음 사진">다음 →</button></div></div>
 
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 const CFG = window.ALBUM_CONFIG || {};
-const EVENTS = ['수학여행','수련회','체육대회','교실','졸업앨범','졸업식','기타'];   // 사진첩에 나오는 순서이기도 하다
+const EVENTS = ['졸업 30주년','수학여행','수련회','체육대회','교실','졸업앨범','졸업식','기타'];   // 사진첩에 나오는 순서이기도 하다
 // 사진 나열: 행사 순서 → 운영진이 매긴 순서 번호(단체사진 먼저) → 올린 순서. 새로 올린 사진은 그 행사 맨 뒤에 붙는다.
 const evRank = e => { const i = EVENTS.indexOf(e); return i < 0 ? EVENTS.length : i };
 const byAlbumOrder = (a, b) => evRank(a.event) - evRank(b.event) || (a.sort_order ?? 1e9) - (b.sort_order ?? 1e9) || String(a.created_at).localeCompare(String(b.created_at));
@@ -458,11 +466,19 @@ function renderPhotos(){
     .map(e => `<button class="tab" data-e="${e}" aria-selected="${e===evFilter}">${e} <small>${e==='전체' ? mine.length : counts[e]}</small></button>`).join('');
   const list = mine.filter(p => evFilter === '전체' || p.event === evFilter);
   const showBy = split && whoFilter === '전체';
-  $('photos').innerHTML = list.length ? list.map(p => `
-    <figure class="ph">
+  const secOf = p => { const m = /^([^·]{1,20}?)\s*·\s*(.+)$/.exec(p.caption || ''); return m ? [m[1].trim(), m[2].trim()] : ['', p.caption || ''] };
+  const secCounts = {}; list.forEach(p => { const [s] = secOf(p); if(s) secCounts[s] = (secCounts[s] || 0) + 1 });
+  const useSec = Object.keys(secCounts).length >= 2 && (evFilter !== '전체' || new Set(list.map(p => p.event)).size === 1);
+  let curSec = '';
+  $('photos').innerHTML = list.length ? list.map(p => {
+    const [sec, restCap] = useSec ? secOf(p) : ['', p.caption || ''];
+    const head = useSec && sec && sec !== curSec ? (curSec = sec, `<h3 class="ph-sec">${esc(sec)} <span>${secCounts[sec]}장</span></h3>`) : '';
+    const hero = /단체사진/.test(p.caption || '') ? ' hero' : '';
+    return `${head}<figure class="ph${hero}">
       <button data-id="${esc(p.id)}" aria-label="크게 보기"><img src="${esc(api.url(p.path))}" alt="${esc(p.caption || p.event)}" loading="lazy">${p.ai_path ? '<span class="ai">+ AI 복원</span>' : ''}</button>
-      <figcaption><span>${esc(p.caption || '')}${showBy && p.contributor ? `<span class="by">${esc(whoOf(p))} 제공</span>` : ''}</span><span class="tag">${esc(p.event)}</span></figcaption>
-    </figure>`).join('')
+      <figcaption><span>${esc(restCap)}${showBy && p.contributor ? `<span class="by">${esc(whoOf(p))} 제공</span>` : ''}</span><span class="tag">${esc(p.event)}</span></figcaption>
+    </figure>`;
+  }).join('')
     : '<div class="empty" style="grid-column:1/-1"><strong>아직 사진이 없어요</strong>수학여행, 졸업식 사진을 골라 "사진 올리기"를 누르세요.</div>';
   $('whoList').innerHTML = [...new Set(roster.map(p => p.name))].map(n => `<option value="${esc(n)}">`).join('');
 }
@@ -509,17 +525,32 @@ $('gateForm').onsubmit = async e => {
 };
 $('lock').onclick = () => { savePw(''); roster = []; photos = []; teachers = []; answers = {}; loaded = false; renderAlbum(); showGate() };
 
-function openPhoto(id){
+let lbList = [], lbIdx = -1;
+function openPhoto(id, pool){
   const p = photos.find(x => x.id === id); if(!p) return;
+  if(pool) lbList = pool;
+  else if(!lbList.some(x => x.id === id)) lbList = isBook(p) ? photos.filter(isBook) : shelf().filter(x => (whoFilter === '전체' || whoOf(x) === whoFilter) && (evFilter === '전체' || x.event === evFilter));
+  lbIdx = lbList.findIndex(x => x.id === id);
   const two = !!p.ai_path;
   $('lb').classList.toggle('two', two); $('lbL1').hidden = !two; $('lbAiBox').hidden = !two;
   $('lbAi').src = two ? api.url(p.ai_path) : '';
-  $('lbImg').src = api.url(p.path); $('lbCap').textContent = isBook(p) ? [BOOK, p.caption].filter(Boolean).join(' · ') : [p.event, p.caption, p.contributor ? whoOf(p) + ' 제공' : ''].filter(Boolean).join(' · '); $('lb').hidden = false;
+  $('lbImg').src = api.url(p.path); $('lbCap').textContent = isBook(p) ? [BOOK, p.caption].filter(Boolean).join(' · ') : [p.event, p.caption, p.contributor ? whoOf(p) + ' 제공' : ''].filter(Boolean).join(' · ');
+  const multi = lbList.length > 1;
+  $('lbPrev').hidden = !multi; $('lbNext').hidden = !multi; $('lbCnt').hidden = !multi;
+  $('lbCnt').textContent = multi ? `${lbIdx + 1} / ${lbList.length}` : '';
+  $('lb').hidden = false;
 }
-$('photos').onclick = e => { const b = e.target.closest('button[data-id]'); if(b) openPhoto(b.dataset.id) };
+function stepPhoto(d){ if(lbList.length > 1 && !$('lb').hidden) openPhoto(lbList[(lbIdx + d + lbList.length) % lbList.length].id, lbList) }
+$('photos').onclick = e => { const b = e.target.closest('button[data-id]'); if(b) openPhoto(b.dataset.id, shelf().filter(x => (whoFilter === '전체' || whoOf(x) === whoFilter) && (evFilter === '전체' || x.event === evFilter))) };
+$('lbPrev').onclick = () => stepPhoto(-1);
+$('lbNext').onclick = () => stepPhoto(1);
 $('lbClose').onclick = () => $('lb').hidden = true;
 $('lb').onclick = e => { if(e.target === $('lb')) $('lb').hidden = true };
-document.addEventListener('keydown', e => { if(e.key === 'Escape'){ $('lb').hidden = true; if(openId) closePerson() } });
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape'){ $('lb').hidden = true; if(openId) closePerson() }
+  else if(!$('lb').hidden && e.key === 'ArrowLeft') stepPhoto(-1);
+  else if(!$('lb').hidden && e.key === 'ArrowRight') stepPhoto(1);
+});
 
 // 큰 사진을 긴 변 2000px JPEG 로 줄인다 (용량 절약)
 async function shrink(file){

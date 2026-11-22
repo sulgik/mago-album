@@ -6,9 +6,9 @@
 
 alter table photos add column if not exists sort_order int;   -- 운영진이 매기는 순서 번호. 비어 있으면 그 행사 맨 뒤
 
--- 행사 분류에 '졸업앨범'(졸업앨범에 실린 반 단체·교실·조별 사진) 추가
+-- 행사 분류에 '졸업앨범'(졸업앨범에 실린 반 단체·교실·조별 사진)과 '졸업 30주년' 추가
 alter table photos drop constraint if exists photos_event_check;
-alter table photos add constraint photos_event_check check (event in ('수학여행','졸업식','수련회','체육대회','교실','졸업앨범','기타'));
+alter table photos add constraint photos_event_check check (event in ('수학여행','졸업식','수련회','체육대회','교실','졸업앨범','졸업 30주년','기타'));
 
 create or replace function album_load(pw text) returns json
 language plpgsql stable security definer set search_path = public, extensions as $$

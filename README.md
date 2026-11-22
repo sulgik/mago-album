@@ -15,7 +15,10 @@
 | `supabase/contributor.sql` | 사진첩에 "사진 주인(제공자)" 칸 추가. 이미 운영 중인 서버에서 한 번 실행 |
 | `supabase/order.sql` | 사진첩 나열 순서(행사 순서 → 순서 번호 → 올린 순서)와 행사 분류 '졸업앨범'. `contributor.sql` 다음에 한 번 실행 |
 | `supabase/grade.sql` | 사진에 학년 칸 추가. 학년을 아는 사진(수학여행 = 2학년)은 사진 주인의 그 학년 반 화면에도 나온다. `order.sql` 다음에 한 번 실행 |
+| `supabase/ai.sql` | 사진에 AI 복원본 경로(`ai_path`) 칸 추가. `grade.sql` 다음에 한 번 실행 |
+| `supabase/reunion30.sql` | 사진첩 행사 분류에 `졸업 30주년` 추가. `ai.sql` 다음에 한 번 실행 |
 | `tools/roster_to_sql.py` | 명단 CSV → 넣기용 SQL |
+| `tools/upload_reunion30.py` | 졸업 30주년 선별 사진 리사이즈·Storage 업로드 및 등록 SQL 생성 |
 
 데이터 규칙:
 - `roster` (이름, 3학년 반): 사이트에서는 못 바꾼다. 운영진이 SQL 로만 넣는다.
