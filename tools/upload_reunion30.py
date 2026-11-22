@@ -27,7 +27,7 @@ except Exception:
 
 SUPABASE_URL = "https://ofewlxuhmdlwdfshgdhr.supabase.co"
 SUPABASE_ANON_KEY = "sb_publishable_qhB2fsugqAreLahFoAvgwg_HHqEdp0R"
-DEFAULT_SRC_DIR = "/Users/sulgik/Downloads/졸업30주년_선별/사진"
+DEFAULT_SRC_DIR = "/Volumes/Blue/마고55_졸업30주년/졸업30주년_선별/사진"
 STORAGE_PREFIX = "reunion30"
 EVENT_NAME = "졸업 30주년"
 
