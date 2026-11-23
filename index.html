@@ -92,7 +92,7 @@ h1{font-family:var(--display);font-size:30px;font-weight:700;margin:0;text-wrap:
 .page h3{font-family:var(--display);font-size:18px;margin:22px 0 4px;padding-top:16px;border-top:1px dashed var(--line);display:flex;align-items:baseline;gap:8px}
 .page h3 span{font-family:var(--body);font-size:13px;color:var(--sub);font-weight:400}
 .picklabel{font-size:12px;color:var(--sub);margin:10px 0 4px}
-.upl input#upWho{flex:0 1 150px}
+.upl input#upWho,.upl input#upReunionWho{flex:0 1 155px}
 .overlay{position:fixed;inset:0;background:rgba(10,14,22,.82);display:flex;align-items:center;justify-content:center;z-index:20;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .card{background:var(--card);color:var(--ink);border-radius:14px;padding:18px;width:min(420px,100%);max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:14px}
 .card .big{width:min(240px,70%);aspect-ratio:3/4;margin:0 auto;border-radius:8px;overflow:hidden;background:var(--navy-soft);display:flex;align-items:center;justify-content:center}
@@ -170,7 +170,18 @@ footer{margin-top:40px;color:var(--sub);font-size:12px;line-height:1.7}
   </section>
 
   <section id="v-reunion" hidden>
-    <p class="hint" id="reunionHint">2026년 11월 21일 마산고 55회 졸업 30주년 기념행사 사진첩이에요. 사진을 누르면 크게 보고 좌우(← →)로 넘겨 볼 수 있어요.</p>
+    <div class="upl">
+      <select id="upReunionSec" aria-label="행사 순서">
+        <option value="1부 기념식">1부 기념식</option>
+        <option value="축하공연">축하공연</option>
+        <option value="2차 뒤풀이">2차 뒤풀이</option>
+      </select>
+      <input type="text" id="upReunionWho" maxlength="40" list="whoList" placeholder="올리는 동문 이름 (선택)" aria-label="올리는 동문 이름">
+      <input type="text" id="upReunionCap" maxlength="180" placeholder="설명 (선택) 예: 테이블 건배, 포토월 앞에서">
+      <label class="btn pri" for="upReunionFile">30주년 사진 올리기</label>
+      <input type="file" id="upReunionFile" accept="image/*" multiple hidden>
+    </div>
+    <p class="hint" id="reunionHint">2026년 11월 21일 졸업 30주년 기념행사 사진을 함께 모아 주세요. 여러 장을 한 번에 고를 수 있고 큰 사진은 자동으로 줄여서 올라가요.</p>
     <div class="photos" id="reunionPhotos"></div>
   </section>
 
@@ -239,12 +250,13 @@ const CFG = window.ALBUM_CONFIG || {};
 const EVENTS = ['졸업 30주년','수학여행','수련회','체육대회','교실','졸업앨범','졸업식','기타'];   // 사진첩에 나오는 순서이기도 하다
 // 사진 나열: 행사 순서 → 운영진이 매긴 순서 번호(단체사진 먼저) → 올린 순서. 새로 올린 사진은 그 행사 맨 뒤에 붙는다.
 const evRank = e => { const i = EVENTS.indexOf(e); return i < 0 ? EVENTS.length : i };
-const byAlbumOrder = (a, b) => evRank(a.event) - evRank(b.event) || (a.sort_order ?? 1e9) - (b.sort_order ?? 1e9) || String(a.created_at).localeCompare(String(b.created_at));
-// 졸업앨범 책에서 옮긴 사진(행사 '졸업앨범')은 사진첩이 아니라 졸업앨범 탭의 3학년 반별 화면에 나온다.
-// 어느 반인지는 설명 맨 앞의 "3학년 N반"으로 읽는다. 반이 안 적힌 사진(대의원 등)은 "그 밖의 사진"에 모인다.
 const BOOK = '졸업앨범', REUNION = '졸업 30주년';
+const REUNION_SECS = ['1부 기념식','축하공연','2차 뒤풀이'];
 const isBook = p => p.event === BOOK;
 const isReunion = p => p.event === REUNION;
+const reunionSec = p => { const m = /^([^·]{1,20}?)\s*·/.exec(p.caption || ''); return m ? m[1].trim() : '' };
+const reunionRank = p => { if(/단체사진/.test(p.caption || '')) return -1; const i = REUNION_SECS.indexOf(reunionSec(p)); return i < 0 ? REUNION_SECS.length : i };
+const byAlbumOrder = (a, b) => evRank(a.event) - evRank(b.event) || (isReunion(a) ? reunionRank(a) - reunionRank(b) : 0) || (a.sort_order ?? 1e9) - (b.sort_order ?? 1e9) || String(a.created_at).localeCompare(String(b.created_at));
 const bookClass = p => { const m = /^\s*3학년\s*(\d+)\s*반/.exec(p.caption || ''); return m ? +m[1] : null };
 const bookCap = p => (p.caption || '').replace(/^\s*3학년\s*\d+\s*반\s*/, '');
 const reunionPhotos = () => photos.filter(isReunion);
@@ -495,7 +507,7 @@ function renderPhotos(){
 
 function renderReunion(){
   const list = reunionPhotos();
-  const secOf = p => { const m = /^([^·]{1,20}?)\s*·\s*(.+)$/.exec(p.caption || ''); return m ? [m[1].trim(), m[2].trim()] : ['', p.caption || ''] };
+  const secOf = p => { const m = /^([^·]{1,20}?)\s*·\s*(.+)$/.exec(p.caption || ''); return m ? [m[1].trim(), m[2].trim()] : [/단체사진/.test(p.caption || '') ? '' : '동문 추가 사진', p.caption || ''] };
   const secCounts = {}; list.forEach(p => { const [s] = secOf(p); if(s) secCounts[s] = (secCounts[s] || 0) + 1 });
   let curSec = '';
   $('reunionPhotos').innerHTML = list.length ? list.map(p => {
@@ -504,7 +516,7 @@ function renderReunion(){
     const hero = /단체사진/.test(p.caption || '') ? ' hero' : '';
     return `${head}<figure class="ph${hero}">
       <button data-id="${esc(p.id)}" aria-label="크게 보기"><img src="${esc(api.url(p.path))}" alt="${esc(p.caption || p.event)}" loading="lazy">${p.ai_path ? '<span class="ai">+ AI 복원</span>' : ''}</button>
-      <figcaption><span>${esc(restCap)}</span><span class="tag">${esc(sec || p.event)}</span></figcaption>
+      <figcaption><span>${esc(restCap)}${p.contributor ? `<span class="by">${esc(whoOf(p))} 제공</span>` : ''}</span><span class="tag">${esc(sec || p.event)}</span></figcaption>
     </figure>`;
   }).join('')
     : '<div class="empty" style="grid-column:1/-1"><strong>졸업 30주년 사진을 불러오는 중이에요</strong>잠시만 기다려 주세요.</div>';
@@ -540,8 +552,8 @@ $('pv').onclick = e => { if(e.target === $('pv')) closePerson() };
 $('eventPick').onclick = e => { const b = e.target.closest('[data-e]'); if(b){ evFilter = b.dataset.e; renderPhotos() } };
 $('whoPick').onclick = e => { const b = e.target.closest('[data-w]'); if(b){ whoFilter = b.dataset.w; evFilter = '전체'; renderPhotos() } };
 const WHO_KEY = 'mago-album-who';
-try{ $('upWho').value = localStorage.getItem(WHO_KEY) || '' }catch(e){}
-$('upEvent').innerHTML = EVENTS.filter(e => e !== BOOK).map(e => `<option>${e}</option>`).join('');
+try{ const w = localStorage.getItem(WHO_KEY) || ''; $('upWho').value = w; $('upReunionWho').value = w }catch(e){}
+$('upEvent').innerHTML = EVENTS.filter(e => e !== BOOK && e !== REUNION).map(e => `<option>${e}</option>`).join('');
 
 let saving = Promise.resolve();
 $('pvRows').addEventListener('change', async e => {
@@ -602,11 +614,28 @@ async function shrink(file){
   return new Promise(r => c.toBlob(b => r(b || file), 'image/jpeg', 0.85));
 }
 
+$('upReunionFile').onchange = async e => {
+  const files = [...e.target.files]; e.target.value = '';
+  if(!files.length) return;
+  const sec = $('upReunionSec').value, capText = $('upReunionCap').value.trim(), who = $('upReunionWho').value.trim();
+  const caption = capText ? `${sec} · ${capText}` : `${sec} · 동문 사진`;
+  try{ if(who){ localStorage.setItem(WHO_KEY, who); $('upWho').value = who } }catch(err){}
+  let ok = 0, fail = 0;
+  for(const f of files){
+    $('reunionHint').textContent = `올리는 중… ${ok + fail + 1}/${files.length}`;
+    try{ await api.addPhoto(await shrink(f), REUNION, caption, who); ok++ }
+    catch(err){ console.error(err); fail++ }
+  }
+  $('reunionHint').textContent = fail ? `${ok}장 올렸고 ${fail}장은 실패했어요. 사진 파일인지 확인해 주세요.` : `${ok}장 올렸어요! 고맙습니다.`;
+  $('upReunionCap').value = '';
+  await refresh();
+};
+
 $('upFile').onchange = async e => {
   const files = [...e.target.files]; e.target.value = '';
   if(!files.length) return;
   const event = $('upEvent').value, caption = $('upCap').value.trim(), who = $('upWho').value.trim();
-  try{ who ? localStorage.setItem(WHO_KEY, who) : localStorage.removeItem(WHO_KEY) }catch(err){}
+  try{ who ? (localStorage.setItem(WHO_KEY, who), $('upReunionWho').value = who) : localStorage.removeItem(WHO_KEY) }catch(err){}
   let ok = 0, fail = 0;
   for(const f of files){
     $('upMsg').textContent = `올리는 중… ${ok + fail + 1}/${files.length}`;
@@ -615,7 +644,6 @@ $('upFile').onchange = async e => {
   }
   $('upMsg').textContent = fail ? `${ok}장 올렸고 ${fail}장은 실패했어요. 사진 파일인지 확인해 주세요.` : `${ok}장 올렸어요.`;
   $('upCap').value = '';
-  if(event === REUNION){ show('reunion', true); await refresh(); return }
   evFilter = '전체'; whoFilter = who || '전체'; await refresh();
 };
 
