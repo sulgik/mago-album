@@ -173,7 +173,6 @@ footer{margin-top:40px;color:var(--sub);font-size:12px;line-height:1.7}
     <div class="upl">
       <select id="upReunionSec" aria-label="행사 순서">
         <option value="1부 기념식">1부 기념식</option>
-        <option value="축하공연">축하공연</option>
         <option value="2차 뒤풀이">2차 뒤풀이</option>
       </select>
       <input type="text" id="upReunionWho" maxlength="40" list="whoList" placeholder="올리는 동문 이름 (선택)" aria-label="올리는 동문 이름">
@@ -251,10 +250,11 @@ const EVENTS = ['졸업 30주년','수학여행','수련회','체육대회','교
 // 사진 나열: 행사 순서 → 운영진이 매긴 순서 번호(단체사진 먼저) → 올린 순서. 새로 올린 사진은 그 행사 맨 뒤에 붙는다.
 const evRank = e => { const i = EVENTS.indexOf(e); return i < 0 ? EVENTS.length : i };
 const BOOK = '졸업앨범', REUNION = '졸업 30주년';
-const REUNION_SECS = ['1부 기념식','축하공연','2차 뒤풀이'];
+const REUNION_SECS = ['1부 기념식','2차 뒤풀이'];
 const isBook = p => p.event === BOOK;
 const isReunion = p => p.event === REUNION;
-const reunionSec = p => { const m = /^([^·]{1,20}?)\s*·/.exec(p.caption || ''); return m ? m[1].trim() : '' };
+const normReunionSec = s => (s === '축하공연' || s === '1부 기념식·축하공연') ? '1부 기념식' : s;
+const reunionSec = p => { const m = /^([^·]{1,20}?)\s*·/.exec(p.caption || ''); return m ? normReunionSec(m[1].trim()) : '' };
 const reunionRank = p => { if(/단체사진/.test(p.caption || '')) return -1; const i = REUNION_SECS.indexOf(reunionSec(p)); return i < 0 ? REUNION_SECS.length : i };
 const byAlbumOrder = (a, b) => evRank(a.event) - evRank(b.event) || (isReunion(a) ? reunionRank(a) - reunionRank(b) : 0) || (a.sort_order ?? 1e9) - (b.sort_order ?? 1e9) || String(a.created_at).localeCompare(String(b.created_at));
 const bookClass = p => { const m = /^\s*3학년\s*(\d+)\s*반/.exec(p.caption || ''); return m ? +m[1] : null };
@@ -507,7 +507,7 @@ function renderPhotos(){
 
 function renderReunion(){
   const list = reunionPhotos();
-  const secOf = p => { const m = /^([^·]{1,20}?)\s*·\s*(.+)$/.exec(p.caption || ''); return m ? [m[1].trim(), m[2].trim()] : [/단체사진/.test(p.caption || '') ? '' : '동문 추가 사진', p.caption || ''] };
+  const secOf = p => { const m = /^([^·]{1,20}?)\s*·\s*(.+)$/.exec(p.caption || ''); return m ? [normReunionSec(m[1].trim()), m[2].trim()] : [/단체사진/.test(p.caption || '') ? '' : '동문 추가 사진', p.caption || ''] };
   const secCounts = {}; list.forEach(p => { const [s] = secOf(p); if(s) secCounts[s] = (secCounts[s] || 0) + 1 });
   let curSec = '';
   $('reunionPhotos').innerHTML = list.length ? list.map(p => {
