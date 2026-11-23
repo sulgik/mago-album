@@ -17,6 +17,8 @@ import ssl
 import sys
 import urllib.error
 import urllib.request
+import cv2
+import numpy as np
 from PIL import Image, ImageOps
 
 try:
@@ -28,7 +30,7 @@ except Exception:
 SUPABASE_URL = "https://ofewlxuhmdlwdfshgdhr.supabase.co"
 SUPABASE_ANON_KEY = "sb_publishable_qhB2fsugqAreLahFoAvgwg_HHqEdp0R"
 DEFAULT_SRC_DIR = "/Volumes/Blue/마고55_졸업30주년/졸업30주년_선별/사진"
-STORAGE_PREFIX = "reunion30"
+STORAGE_PREFIX = "reunion30_v2"
 EVENT_NAME = "졸업 30주년"
 
 # (storage_filename, source_filename, sort_order, caption)
@@ -81,7 +83,61 @@ CURATED = [
 ]
 
 
-def shrink_image(path: str, max_side: int = 2000, quality: int = 85) -> bytes:
+def enhance_photo(pil_im: Image.Image) -> Image.Image:
+    """실내 조명 플레어(뿌연 안개감), 어두운 암부(2차 호프집), 노란 조명 색감 자동 보정."""
+    rgb = np.asarray(pil_im, dtype=np.uint8)
+    bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+
+    # 1. 암부 밝히기 전 컬러 노이즈 살짝 억제
+    bgr = cv2.bilateralFilter(bgr, d=5, sigmaColor=18, sigmaSpace=18)
+
+    # 2. 무대 스포트라이트 역광으로 뜬 블랙 레벨(Dehaze) 및 화이트 포인트 정렬
+    lab = cv2.cvtColor(bgr, cv2.COLOR_BGR2LAB)
+    l, a, b = cv2.split(lab)
+    lf = l.astype(np.float32)
+    p3, p50, p96 = np.percentile(lf, [3, 50, 96])
+
+    black_floor = max(0.0, min(p3 - 10.0, 32.0)) * 0.65
+    white_ceil = max(225.0, min(p96 + 15.0, 252.0))
+    lf = np.clip((lf - black_floor) * (255.0 / max(white_ceil - black_floor, 120.0)), 0, 255)
+
+    # 3. 어두운 사진(2차 호프집 등) 암부·중간톤 적응형 밝기 보정 (하이라이트 보호)
+    p50_new = float(np.percentile(lf, 50))
+    target_p50 = np.clip(p50_new * 0.55 + 52.0, 78.0, 122.0)
+    gamma = np.log(target_p50 / 255.0) / np.log(max(p50_new, 15.0) / 255.0)
+    gamma = float(np.clip(gamma, 0.68, 0.96))
+    norm = lf / 255.0
+    lifted = np.power(norm, gamma)
+    blend_w = np.clip(1.0 - np.maximum(0.0, (norm - 0.65) / 0.35), 0.0, 1.0)
+    norm = norm * (1.0 - blend_w) + lifted * blend_w
+    l_u8 = np.clip(norm * 255.0, 0, 255).astype(np.uint8)
+
+    # 4. 로컬 대비(CLAHE)로 인물 표정 또렷하게
+    clahe = cv2.createCLAHE(clipLimit=1.35, tileGridSize=(8, 8))
+    l_clahe = clahe.apply(l_u8)
+    l_final = cv2.addWeighted(l_u8, 0.55, l_clahe, 0.45, 0)
+
+    # 5. 실내 황색/주황색 조명 캐스트 완화 및 자연스러운 생동감(Vibrance)
+    af = a.astype(np.float32) - 128.0
+    bf = b.astype(np.float32) - 128.0
+    mean_a, mean_b = float(af.mean()), float(bf.mean())
+    if mean_b > 5.0:
+        bf -= min(mean_b - 5.0, 9.0) * 0.55
+    if mean_a > 4.0:
+        af -= min(mean_a - 4.0, 6.0) * 0.40
+    af = np.clip(af * 1.05 + 128.0, 0, 255).astype(np.uint8)
+    bf = np.clip(bf * 1.04 + 128.0, 0, 255).astype(np.uint8)
+
+    lab_out = cv2.merge([l_final, af, bf])
+    rgb_out = cv2.cvtColor(lab_out, cv2.COLOR_LAB2RGB)
+
+    # 6. 미세 선명도(Unsharp Mask)
+    blur = cv2.GaussianBlur(rgb_out, (0, 0), sigmaX=1.2)
+    sharp = cv2.addWeighted(rgb_out, 1.18, blur, -0.18, 0)
+    return Image.fromarray(sharp)
+
+
+def shrink_image(path: str, max_side: int = 2000, quality: int = 87, enhance: bool = True) -> bytes:
     im = ImageOps.exif_transpose(Image.open(path))
     if im.mode != "RGB":
         im = im.convert("RGB")
@@ -89,6 +145,8 @@ def shrink_image(path: str, max_side: int = 2000, quality: int = 85) -> bytes:
     if max(w, h) > max_side:
         k = max_side / max(w, h)
         im = im.resize((round(w * k), round(h * k)), Image.Resampling.LANCZOS)
+    if enhance:
+        im = enhance_photo(im)
     buf = io.BytesIO()
     im.save(buf, format="JPEG", quality=quality, optimize=True)
     return buf.getvalue()
@@ -156,7 +214,7 @@ begin
   );
 end $$;
 """)
-    print("delete from photos where path like 'reunion30/%';")
+    print("delete from photos where path like 'reunion30/%' or path like 'reunion30_v2/%';")
     print("insert into photos (path, event, caption, sort_order) values")
     print(",\n".join(f"  ({q(p)}, {q(ev)}, {q(cap)}, {so})" for p, ev, cap, so in rows) + ";")
     print("\nnotify pgrst, 'reload schema';")
