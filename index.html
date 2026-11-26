@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="logo-brown.svg" type="image/svg+xml">
-<title>마산고 55회 졸업앨범</title>
+<title>마산고 55회 동문 앨범</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
 <style>
@@ -154,18 +154,18 @@ footer{margin-top:40px;color:var(--sub);font-size:12px;line-height:1.7}
     <img class="logo" src="logo-brown.svg" alt="마산고등학교 교표">
     <div class="ht">
       <div class="eyebrow" id="school">마산고등학교 동문회</div>
-      <h1 id="title">온라인 졸업앨범</h1>
+      <h1 id="title">55회 동문 앨범</h1>
       <div class="stats" id="stats">앨범을 불러오는 중…</div>
     </div>
   </header>
 
   <div class="tabs" role="tablist">
-    <button class="tab" role="tab" id="t-reunion" aria-selected="false">졸업 30주년</button>
-    <button class="tab" role="tab" id="t-album" aria-selected="true">졸업앨범</button>
+    <button class="tab" role="tab" id="t-reunion" aria-selected="true">졸업 30주년</button>
+    <button class="tab" role="tab" id="t-album" aria-selected="false">졸업앨범</button>
     <button class="tab" role="tab" id="t-photo" aria-selected="false">학창시절 사진첩</button>
   </div>
 
-  <section id="v-album">
+  <section id="v-album" hidden>
     <form class="search" id="searchForm" role="search" onsubmit="return false">
       <input id="q" type="search" placeholder="이름으로 찾기" autocomplete="off" enterkeyhint="search" aria-label="이름 검색">
       <button type="button" id="qClear" hidden aria-label="지우기">×</button>
@@ -176,7 +176,7 @@ footer{margin-top:40px;color:var(--sub);font-size:12px;line-height:1.7}
     <div class="page" id="page"></div>
   </section>
 
-  <section id="v-reunion" hidden>
+  <section id="v-reunion">
     <div class="videos">
       <figure class="video">
         <div class="frame"><iframe src="https://www.youtube-nocookie.com/embed/a1RHNRzVdwU?rel=0" title="마산고등학교 55회 동문회 영상" loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
@@ -229,7 +229,7 @@ footer{margin-top:40px;color:var(--sub);font-size:12px;line-height:1.7}
   <div class="box">
     <div class="brand">
       <img src="logo-brown.svg" alt="마산고등학교 교표">
-      <div><div class="eyebrow">마산고등학교 · 1993–1995</div><h1>55회 졸업앨범</h1></div>
+      <div><div class="eyebrow">마산고등학교 · 1993–1995</div><h1>55회 동문 앨범</h1></div>
     </div>
     <div class="warn">
       <h2>들어가기 전에</h2>
@@ -542,7 +542,7 @@ function renderReunion(){
 function show(view, pushHash = false){
   ['album','reunion','photo'].forEach(v => { $('t-' + v).setAttribute('aria-selected', v === view); $('v-' + v).hidden = v !== view });
   if(pushHash){
-    const h = view === 'reunion' ? '#30' : view === 'photo' ? '#photo' : '';
+    const h = view === 'album' ? '#album' : view === 'photo' ? '#photo' : '';   // 첫 화면 = 졸업 30주년
     if(location.hash !== h) history.replaceState(null, '', h || location.pathname + location.search);
   }
 }
@@ -550,8 +550,9 @@ function syncViewFromUrl(){
   const h = decodeURIComponent(location.hash || '').replace(/^#/, '').trim();
   const qv = new URLSearchParams(location.search).get('v') || '';
   const tok = (h || qv).toLowerCase();
-  if(tok === '30' || tok === 'reunion' || tok === '30주년' || /^30\./.test(location.hostname)) show('reunion');
+  if(tok === 'album' || tok === '졸업앨범') show('album');
   else if(tok === 'photo' || tok === '사진첩') show('photo');
+  else show('reunion');   // 주소에 아무것도 없거나 #30 이면 졸업 30주년
 }
 
 // ---------- 동작 ----------
@@ -668,7 +669,7 @@ $('upFile').onchange = async e => {
   const ys = Object.values(YEARS).map(Number).filter(Boolean).sort();
   const span = ys.length ? `${ys[0]}–${ys[ys.length - 1]}` : '';
   $('school').textContent = [CFG.SCHOOL || '마산고등학교', span].filter(Boolean).join(' · ');
-  if(CFG.CLASS_OF){ $('title').textContent = `${CFG.CLASS_OF} 졸업앨범`; document.title = `마산고 ${CFG.CLASS_OF} 졸업앨범` }
+  if(CFG.CLASS_OF){ $('title').textContent = `${CFG.CLASS_OF} 동문 앨범`; document.title = `마산고 ${CFG.CLASS_OF} 동문 앨범` }
 }
 syncViewFromUrl();
 renderAlbum(); renderReunion(); renderPhotos();
